@@ -22,6 +22,14 @@ function showSnapshot(snapshot: SettingsSnapshot): void {
     characterSelect.append(option);
   }
 
+  scaleSelect.replaceChildren();
+  for (const scale of snapshot.petScales) {
+    const option = document.createElement("option");
+    option.value = String(scale);
+    option.textContent = `${Math.round(scale * 100)}%`;
+    scaleSelect.append(option);
+  }
+
   currentSettings = snapshot.settings;
   characterSelect.value = currentSettings.characterId;
   scaleSelect.value = String(currentSettings.petScale);

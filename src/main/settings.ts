@@ -3,7 +3,8 @@ import path from "node:path";
 
 import type { AppSettings, DefaultPosition, Point } from "../shared/types";
 
-const supportedScales = new Set([0.75, 1, 1.25, 1.5]);
+export const supportedPetScales = [0.75, 1, 1.25, 1.5];
+const supportedScales = new Set(supportedPetScales);
 
 export const defaultSettings: AppSettings = {
   characterId: "naiwa",
@@ -12,10 +13,17 @@ export const defaultSettings: AppSettings = {
   summonShortcut: "CommandOrControl+Alt+P",
 };
 
-export interface SettingsStore {
+interface SettingsStore {
   load(): AppSettings;
   normalize(value: unknown): AppSettings;
   save(settings: AppSettings): AppSettings;
+}
+
+export interface SettingsManager {
+  activate(): void;
+  get(): AppSettings;
+  saveLastPosition(position: Point): void;
+  update(value: unknown): AppSettings;
 }
 
 function isPoint(value: unknown): value is Point {
@@ -67,7 +75,7 @@ function normalizeSettings(
   return settings;
 }
 
-export function createSettingsStore(
+function createSettingsStore(
   filePath: string,
   isCharacterId: (id: string) => boolean,
 ): SettingsStore {
@@ -92,6 +100,56 @@ export function createSettingsStore(
       writeFileSync(temporaryPath, `${JSON.stringify(normalized, null, 2)}\n`, "utf8");
       renameSync(temporaryPath, filePath);
       return normalized;
+    },
+  };
+}
+
+export function createSettingsManager(
+  filePath: string,
+  isCharacterId: (id: string) => boolean,
+  apply: (next: AppSettings, previous: AppSettings) => void,
+): SettingsManager {
+  const store = createSettingsStore(filePath, isCharacterId);
+  let current = store.load();
+
+  return {
+    activate() {
+      apply(current, current);
+    },
+
+    get() {
+      if (!current.lastPosition) {
+        return { ...current };
+      }
+      return {
+        ...current,
+        lastPosition: { ...current.lastPosition },
+      };
+    },
+
+    saveLastPosition(position) {
+      current = store.save({
+        ...current,
+        lastPosition: position,
+      });
+    },
+
+    update(value) {
+      const normalized = store.normalize(value);
+      const next = {
+        ...normalized,
+        lastPosition: current.lastPosition,
+      };
+      const persisted = store.save(next);
+      try {
+        apply(persisted, current);
+      } catch (error) {
+        store.save(current);
+        apply(current, persisted);
+        throw error;
+      }
+      current = persisted;
+      return this.get();
     },
   };
 }

@@ -80,5 +80,6 @@ export interface CharacterSummary {
 
 export interface SettingsSnapshot {
   characters: CharacterSummary[];
+  petScales: number[];
   settings: AppSettings;
 }

@@ -10,14 +10,7 @@ import path from "node:path";
 
 import { CharacterRegistry } from "../characters";
 import { naiwa } from "../characters/naiwa";
-import {
-  createInteractionController,
-  type InteractionController,
-} from "../interaction/controller";
-import {
-  createPetController,
-  type PetController,
-} from "../pet/controller";
+import { createPetMotion, type PetMotion } from "../pet/motion";
 import type {
   AppSettings,
   CharacterConfig,
@@ -26,25 +19,21 @@ import type {
   Size,
 } from "../shared/types";
 import {
-  createSettingsStore,
+  createSettingsManager,
   defaultSettings,
-  type SettingsStore,
+  supportedPetScales,
+  type SettingsManager,
 } from "./settings";
-import {
-  constrainWindowPosition,
-  cursorToWindowPosition,
-} from "./system-input";
 
 const registry = new CharacterRegistry([naiwa], naiwa.id);
 
 let petWindow: BrowserWindow | undefined;
 let settingsWindow: BrowserWindow | undefined;
-let interaction: InteractionController | undefined;
-let pet: PetController | undefined;
+let motion: PetMotion | undefined;
 let animationTimer: NodeJS.Timeout | undefined;
-let settingsStore: SettingsStore;
-let settings: AppSettings = { ...defaultSettings };
+let settingsManager: SettingsManager;
 let character: CharacterConfig = registry.get(defaultSettings.characterId);
+let appliedScale = defaultSettings.petScale;
 let registeredShortcut: string | undefined;
 
 function scaledSize(config: CharacterConfig, scale: number): Size {
@@ -69,7 +58,17 @@ function bottomRightPosition(size: Size): Point {
   };
 }
 
+function constrainPosition(position: Point, size: Size, workArea: Electron.Rectangle): Point {
+  const maximumX = Math.max(workArea.x, workArea.x + workArea.width - size.width);
+  const maximumY = Math.max(workArea.y, workArea.y + workArea.height - size.height);
+  return {
+    x: Math.min(Math.max(Math.round(position.x), workArea.x), maximumX),
+    y: Math.min(Math.max(Math.round(position.y), workArea.y), maximumY),
+  };
+}
+
 function initialPosition(size: Size): Point {
+  const settings = settingsManager.get();
   if (settings.defaultPosition !== "last" || !settings.lastPosition) {
     return bottomRightPosition(size);
   }
@@ -78,41 +77,44 @@ function initialPosition(size: Size): Point {
     ...settings.lastPosition,
     ...size,
   });
-  return constrainWindowPosition(settings.lastPosition, size, display.workArea);
+  return constrainPosition(settings.lastPosition, size, display.workArea);
 }
 
 function currentSnapshot() {
-  if (!pet) {
+  if (!motion) {
     throw new Error("桌宠尚未初始化");
   }
   return {
     character,
-    state: pet.getState(),
+    state: motion.getState(),
   };
 }
 
 function settingsSnapshot(): SettingsSnapshot {
   return {
     characters: registry.list(),
-    settings,
+    petScales: supportedPetScales,
+    settings: settingsManager.get(),
   };
 }
 
-function configurePet(position: Point): void {
+function configurePet(position: Point, scale: number): void {
   if (!petWindow) {
     return;
   }
 
-  pet = createPetController({
-    clickActions: character.clickActions,
+  motion = createPetMotion({
+    character,
     initialPosition: position,
-    speed: character.speed,
-  });
-  interaction = createInteractionController({
-    pet,
-    window: petWindow,
+    scale,
     onStateChange(state) {
       petWindow?.webContents.send("pet:state", state);
+    },
+    window: {
+      getBounds: () => petWindow!.getBounds(),
+      getPosition: () => petWindow!.getPosition(),
+      setPosition: (x, y) => petWindow!.setPosition(x, y),
+      workAreaAt: (point) => screen.getDisplayNearestPoint(point).workArea,
     },
   });
 
@@ -120,20 +122,10 @@ function configurePet(position: Point): void {
 }
 
 export function summon(x: number, y: number): void {
-  if (!petWindow || !interaction) {
+  if (!petWindow || !motion) {
     return;
   }
-
-  const cursor = { x, y };
-  const bounds = petWindow.getBounds();
-  const display = screen.getDisplayNearestPoint(cursor);
-  const target = cursorToWindowPosition(
-    cursor,
-    bounds,
-    scaledFootAnchor(character, settings.petScale),
-    display.workArea,
-  );
-  interaction.summon(target.x, target.y);
+  motion.summon({ x, y });
 }
 
 function summonAtCursor(): void {
@@ -171,31 +163,35 @@ function registerSummonShortcut(shortcut: string): boolean {
   return false;
 }
 
-function resizeAndConfigurePet(nextCharacter: CharacterConfig, scale: number): void {
+function resizeAndConfigurePet(
+  nextCharacter: CharacterConfig,
+  scale: number,
+): void {
   if (!petWindow) {
     character = nextCharacter;
+    appliedScale = scale;
     return;
   }
 
   const previousBounds = petWindow.getBounds();
-  const previousAnchor = scaledFootAnchor(character, settings.petScale);
+  const previousAnchor = scaledFootAnchor(character, appliedScale);
   const footPosition = {
     x: previousBounds.x + previousAnchor.x,
     y: previousBounds.y + previousAnchor.y,
   };
   const size = scaledSize(nextCharacter, scale);
   const display = screen.getDisplayNearestPoint(footPosition);
-  const position = cursorToWindowPosition(
-    footPosition,
-    size,
-    scaledFootAnchor(nextCharacter, scale),
-    display.workArea,
-  );
+  const nextAnchor = scaledFootAnchor(nextCharacter, scale);
+  const position = constrainPosition({
+    x: footPosition.x - nextAnchor.x,
+    y: footPosition.y - nextAnchor.y,
+  }, size, display.workArea);
 
   character = nextCharacter;
   petWindow.setSize(size.width, size.height);
   petWindow.setPosition(position.x, position.y);
-  configurePet(position);
+  configurePet(position, scale);
+  appliedScale = scale;
 }
 
 function applySettings(next: AppSettings): void {
@@ -204,10 +200,13 @@ function applySettings(next: AppSettings): void {
   }
 
   if (
-    next.characterId !== settings.characterId
-    || next.petScale !== settings.petScale
+    next.characterId !== character.id
+    || next.petScale !== appliedScale
   ) {
-    resizeAndConfigurePet(registry.get(next.characterId), next.petScale);
+    resizeAndConfigurePet(
+      registry.get(next.characterId),
+      next.petScale,
+    );
   }
 }
 
@@ -252,9 +251,9 @@ function showPetContextMenu(): void {
 
 function registerIpc(): void {
   ipcMain.handle("pet:snapshot", currentSnapshot);
-  ipcMain.on("pet:click", () => interaction?.click());
+  ipcMain.on("pet:click", () => motion?.click());
   ipcMain.on("pet:drag-by", (_event, deltaX: number, deltaY: number) => {
-    interaction?.dragBy(deltaX, deltaY);
+    motion?.dragBy(deltaX, deltaY);
   });
   ipcMain.on("pet:summon", (_event, targetX: number, targetY: number) => {
     summon(targetX, targetY);
@@ -263,17 +262,13 @@ function registerIpc(): void {
 
   ipcMain.handle("settings:get", settingsSnapshot);
   ipcMain.handle("settings:update", (_event, value: unknown) => {
-    const next = settingsStore.normalize(value);
-    applySettings(next);
-    settings = settingsStore.save({
-      ...next,
-      lastPosition: settings.lastPosition,
-    });
+    settingsManager.update(value);
     return settingsSnapshot();
   });
 }
 
 function createPetWindow(): void {
+  const settings = settingsManager.get();
   const size = scaledSize(character, settings.petScale);
   const position = initialPosition(size);
 
@@ -296,14 +291,14 @@ function createPetWindow(): void {
     },
   });
 
-  configurePet(position);
+  configurePet(position, settings.petScale);
   petWindow.loadFile(path.join(app.getAppPath(), "src/renderer/index.html"));
   petWindow.once("ready-to-show", () => petWindow?.show());
 
   let previousTime = performance.now();
   animationTimer = setInterval(() => {
     const currentTime = performance.now();
-    interaction?.tick(currentTime - previousTime);
+    motion?.tick(currentTime - previousTime);
     previousTime = currentTime;
   }, 16);
 
@@ -312,8 +307,7 @@ function createPetWindow(): void {
       clearInterval(animationTimer);
     }
     animationTimer = undefined;
-    interaction = undefined;
-    pet = undefined;
+    motion = undefined;
     petWindow = undefined;
   });
 }
@@ -323,24 +317,25 @@ function saveLastPosition(): void {
     return;
   }
   const [x, y] = petWindow.getPosition();
-  settings = settingsStore.save({
-    ...settings,
-    lastPosition: { x, y },
-  });
+  settingsManager.saveLastPosition({ x, y });
 }
 
 app.whenReady().then(() => {
-  settingsStore = createSettingsStore(
+  settingsManager = createSettingsManager(
     path.join(app.getPath("userData"), "settings.json"),
     (id) => registry.has(id),
+    applySettings,
   );
-  settings = settingsStore.load();
+  const settings = settingsManager.get();
   character = registry.get(settings.characterId);
+  appliedScale = settings.petScale;
   registerIpc();
   createPetWindow();
 
-  if (!registerSummonShortcut(settings.summonShortcut)) {
-    console.error(`无法注册桌宠召唤快捷键：${settings.summonShortcut}`);
+  try {
+    settingsManager.activate();
+  } catch (error) {
+    console.error(error);
   }
 
   app.on("activate", () => {

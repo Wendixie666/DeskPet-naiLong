@@ -8,6 +8,18 @@ const { naiwa } = require(path.join(
 ));
 
 app.whenReady().then(async () => {
+  async function visiblePixelCount(targetWindow) {
+    const screenshot = await targetWindow.webContents.capturePage();
+    const bitmap = screenshot.toBitmap();
+    let count = 0;
+    for (let offset = 3; offset < bitmap.length; offset += 4) {
+      if (bitmap[offset] !== 0) {
+        count += 1;
+      }
+    }
+    return count;
+  }
+
   const settings = {
     characterId: "naiwa",
     defaultPosition: "bottom-right",
@@ -25,10 +37,12 @@ app.whenReady().then(async () => {
   }));
   ipcMain.handle("settings:get", () => ({
     characters: [{ id: naiwa.id, name: naiwa.name }],
+    petScales: [0.75, 1, 1.25, 1.5],
     settings,
   }));
   ipcMain.handle("settings:update", (_event, next) => ({
     characters: [{ id: naiwa.id, name: naiwa.name }],
+    petScales: [0.75, 1, 1.25, 1.5],
     settings: next,
   }));
 
@@ -62,15 +76,25 @@ app.whenReady().then(async () => {
       width: canvas.width,
     };
   })()`);
-  const screenshot = await window.webContents.capturePage();
-  const bitmap = screenshot.toBitmap();
-  let visiblePixels = 0;
+  const visiblePixels = await visiblePixelCount(window);
 
-  for (let offset = 3; offset < bitmap.length; offset += 4) {
-    if (bitmap[offset] !== 0) {
-      visiblePixels += 1;
+  window.webContents.send("pet:state", {
+    action: "walk",
+    facing: "left",
+    isMoving: true,
+    position: { x: 0, y: 0 },
+  });
+  let walkVisiblePixels = 0;
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    walkVisiblePixels = await visiblePixelCount(window);
+    if (walkVisiblePixels >= 1_000) {
+      break;
     }
   }
+  const facingLeft = await window.webContents.executeJavaScript(
+    'document.querySelector("#pet-canvas").classList.contains("facing-left")',
+  );
 
   const settingsWindow = new BrowserWindow({
     width: 460,
@@ -97,9 +121,11 @@ app.whenReady().then(async () => {
 
   const result = {
     canvasState,
+    facingLeft,
     rendererErrors,
     settingsState,
     visiblePixels,
+    walkVisiblePixels,
   };
   console.log(JSON.stringify(result));
 
@@ -110,6 +136,8 @@ app.whenReady().then(async () => {
     || settingsState.characterOptions !== 1
     || settingsState.shortcut !== settings.summonShortcut
     || visiblePixels < 1_000
+    || !facingLeft
+    || walkVisiblePixels < 1_000
   ) {
     app.exit(1);
     return;
