@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""将蓝底逐帧素材预处理为透明、等宽的 Sprite Sheet。"""
+"""将蓝底逐帧素材预处理为透明、等宽的 Sprite Sheet。
+
+输入应是横向排列、帧之间有蓝幕间隔的素材；输出是 renderer 使用的透明
+Sprite Sheet，同时生成只用于人工检查的 debug 预览图。
+"""
 
 from __future__ import annotations
 
