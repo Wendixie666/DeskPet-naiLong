@@ -7,6 +7,7 @@ import type {
 } from "../shared/types";
 import type { DirectionalSpriteAction } from "../shared/types";
 import type { LookDirection } from "../pet/look-direction";
+import { createPetAssetLoader, type PetAssetLoader } from "./pet-assets.js";
 
 export interface PetAnimator {
   render(state: PetState): void;
@@ -20,6 +21,7 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
   let renderedAction: CharacterAction | undefined;
   let renderedActionSequence = -1;
   let renderedState: PetState | undefined;
+  let assetLoader: PetAssetLoader;
 
   function visualPlacement(
     sourceWidth: number,
@@ -139,16 +141,9 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
   }
 
   function playAction(action: CharacterAction, ownAnimationId: number): void {
-    if (action.kind === "directional-sprite") {
-      const directionalAction = action;
-      const sources = directionalAction.assets.map((asset) => {
-        const source = new Image();
-        source.src = `${character.assetRoot}/${encodeURIComponent(asset)}`;
-        return source;
-      });
-      Promise.all(sources.map((source) => new Promise<void>((resolve) => {
-        source.addEventListener("load", () => resolve(), { once: true });
-      }))).then(() => {
+    assetLoader.load(action).then((sources) => {
+      if (action.kind === "directional-sprite") {
+        const directionalAction = action;
         const frames = introFrames(directionalAction);
         const startedAt = performance.now();
 
@@ -168,12 +163,9 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
         }
 
         requestAnimationFrame(draw);
-      });
-      return;
-    }
-    const source = new Image();
-    source.src = `${character.assetRoot}/${encodeURIComponent(action.asset)}`;
-    source.addEventListener("load", () => {
+        return;
+      }
+      const source = sources[0];
       const frameCount = action.kind === "sprite" ? action.frameCount : 1;
       const startedAt = performance.now();
 
@@ -192,6 +184,10 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
       }
 
       requestAnimationFrame(draw);
+    }).catch((error: unknown) => {
+      if (animationId === ownAnimationId) {
+        console.error(error);
+      }
     });
   }
 
@@ -213,6 +209,7 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
     render,
     show(snapshot) {
       character = snapshot.character;
+      assetLoader = createPetAssetLoader(character.assetRoot);
       canvas.width = character.size.width;
       canvas.height = character.size.height;
       renderedAction = undefined;
