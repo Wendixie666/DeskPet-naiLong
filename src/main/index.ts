@@ -10,15 +10,13 @@ import path from "node:path";
 
 import { CharacterRegistry } from "../characters";
 import { naiwa } from "../characters/naiwa";
-import { createPetMotion, type PetMotion } from "../pet/motion";
 import {
   constrainPosition,
-  resizePetWindow,
   scaledSize,
 } from "./pet-window";
+import { createPetRuntime, type PetRuntime } from "./pet-runtime";
 import type {
   AppSettings,
-  CharacterConfig,
   Point,
   SettingsSnapshot,
   Size,
@@ -34,11 +32,9 @@ const registry = new CharacterRegistry([naiwa], naiwa.id);
 
 let petWindow: BrowserWindow | undefined;
 let settingsWindow: BrowserWindow | undefined;
-let motion: PetMotion | undefined;
+let runtime: PetRuntime | undefined;
 let animationTimer: NodeJS.Timeout | undefined;
 let settingsManager: SettingsManager;
-let character: CharacterConfig = registry.get(defaultSettings.characterId);
-let appliedScale = defaultSettings.petScale;
 let registeredShortcut: string | undefined;
 let pendingSummonDiagnostic: {
   cursor: Point;
@@ -68,13 +64,10 @@ function initialPosition(size: Size): Point {
 }
 
 function currentSnapshot() {
-  if (!motion) {
+  if (!runtime) {
     throw new Error("桌宠尚未初始化");
   }
-  return {
-    character,
-    state: motion.getState(),
-  };
+  return runtime.getSnapshot();
 }
 
 function settingsSnapshot(): SettingsSnapshot {
@@ -85,13 +78,13 @@ function settingsSnapshot(): SettingsSnapshot {
   };
 }
 
-function configurePet(position: Point, scale: number): void {
+function createRuntime(position: Point, scale: number): void {
   if (!petWindow) {
     return;
   }
 
-  motion = createPetMotion({
-    character,
+  runtime = createPetRuntime({
+    character: registry.get(settingsManager.get().characterId),
     initialPosition: position,
     scale,
     cursorPosition: () => screen.getCursorScreenPoint(),
@@ -114,33 +107,36 @@ function configurePet(position: Point, scale: number): void {
         pendingSummonDiagnostic = undefined;
       }
     },
+    onSnapshotChange(snapshot) {
+      petWindow?.webContents.send("pet:snapshot-changed", snapshot);
+    },
     window: {
       getBounds: () => petWindow!.getBounds(),
       getPosition: () => petWindow!.getPosition(),
+      setBounds: (bounds) => petWindow!.setBounds(bounds),
       setPosition: (x, y) => petWindow!.setPosition(x, y),
       workAreaAt: (point) => screen.getDisplayNearestPoint(point).workArea,
     },
   });
-
-  petWindow.webContents.send("pet:snapshot-changed", currentSnapshot());
 }
 
 export function summon(x: number, y: number): void {
-  if (!petWindow || !motion) {
+  if (!petWindow || !runtime) {
     return;
   }
-  motion.summon({ x, y });
+  runtime.summon({ x, y });
 }
 
 function summonAtCursor(): void {
   const cursor = screen.getCursorScreenPoint();
-  if (!petWindow || !motion) {
+  if (!petWindow || !runtime) {
     return;
   }
+  const snapshot = runtime.getSnapshot();
   const bounds = petWindow.getBounds();
   const footAnchor = {
-    x: character.visual.footAnchor.x * appliedScale,
-    y: character.visual.footAnchor.y * appliedScale,
+    x: snapshot.character.visual.footAnchor.x * runtime.getScale(),
+    y: snapshot.character.visual.footAnchor.y * runtime.getScale(),
   };
   const workArea = screen.getDisplayNearestPoint(cursor).workArea;
   const computedTarget = constrainPosition({
@@ -204,45 +200,13 @@ function registerSummonShortcut(shortcut: string): boolean {
   return false;
 }
 
-function resizeAndConfigurePet(
-  nextCharacter: CharacterConfig,
-  scale: number,
-): void {
-  if (!petWindow) {
-    character = nextCharacter;
-    appliedScale = scale;
-    return;
-  }
-
-  const position = resizePetWindow(
-    {
-      getBounds: () => petWindow!.getBounds(),
-      setBounds: (bounds) => petWindow!.setBounds(bounds),
-      workAreaAt: (point) => screen.getDisplayNearestPoint(point).workArea,
-    },
-    character,
-    appliedScale,
-    nextCharacter,
-    scale,
-  );
-  character = nextCharacter;
-  configurePet(position, scale);
-  appliedScale = scale;
-}
-
 function applySettings(next: AppSettings): void {
   if (!registerSummonShortcut(next.summonShortcut)) {
     throw new Error(`快捷键 ${next.summonShortcut} 无法注册，可能已被其他应用占用`);
   }
 
-  if (
-    next.characterId !== character.id
-    || next.petScale !== appliedScale
-  ) {
-    resizeAndConfigurePet(
-      registry.get(next.characterId),
-      next.petScale,
-    );
+  if (runtime) {
+    runtime.applyCharacter(registry.get(next.characterId), next.petScale);
   }
 }
 
@@ -290,9 +254,9 @@ function showPetContextMenu(): void {
 
 function registerIpc(): void {
   ipcMain.handle("pet:snapshot", currentSnapshot);
-  ipcMain.on("pet:click", () => motion?.click());
+  ipcMain.on("pet:click", () => runtime?.click());
   ipcMain.on("pet:drag-by", (_event, deltaX: number, deltaY: number) => {
-    motion?.dragBy(deltaX, deltaY);
+    runtime?.dragBy(deltaX, deltaY);
   });
   ipcMain.on("pet:summon", (_event, targetX: number, targetY: number) => {
     summon(targetX, targetY);
@@ -308,6 +272,7 @@ function registerIpc(): void {
 
 function createPetWindow(): void {
   const settings = settingsManager.get();
+  const character = registry.get(settings.characterId);
   const size = scaledSize(character, settings.petScale);
   const position = initialPosition(size);
 
@@ -330,14 +295,14 @@ function createPetWindow(): void {
     },
   });
 
-  configurePet(position, settings.petScale);
+  createRuntime(position, settings.petScale);
   petWindow.loadFile(path.join(app.getAppPath(), "src/renderer/index.html"));
   petWindow.once("ready-to-show", () => petWindow?.show());
 
   let previousTime = performance.now();
   animationTimer = setInterval(() => {
     const currentTime = performance.now();
-    motion?.tick(currentTime - previousTime);
+    runtime?.tick(currentTime - previousTime);
     previousTime = currentTime;
   }, 16);
 
@@ -346,7 +311,7 @@ function createPetWindow(): void {
       clearInterval(animationTimer);
     }
     animationTimer = undefined;
-    motion = undefined;
+    runtime = undefined;
     petWindow = undefined;
   });
 }
@@ -367,8 +332,6 @@ app.whenReady().then(() => {
     applySettings,
   );
   const settings = settingsManager.get();
-  character = registry.get(settings.characterId);
-  appliedScale = settings.petScale;
   registerIpc();
   createPetWindow();
 
