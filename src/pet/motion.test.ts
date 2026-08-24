@@ -45,6 +45,35 @@ test("召唤以脚底中心为目标并推进桌宠窗口", () => {
   assert.deepEqual(emittedPositions.at(-1), { x: 404, y: 398 });
 });
 
+test("连续召唤会生成新的动作序号", () => {
+  const motion = createPetMotion({
+    character: {
+      clickActions: ["wave"],
+      speed: 100,
+      visual: {
+        contentHeight: 180,
+        footAnchor: { x: 96, y: 202 },
+      },
+    },
+    initialPosition: { x: 100, y: 200 },
+    onStateChange() {},
+    scale: 1,
+    window: {
+      getBounds: () => ({ x: 100, y: 200, width: 192, height: 208 }),
+      getPosition: () => [100, 200],
+      setPosition() {},
+      workAreaAt: () => ({ x: 0, y: 0, width: 1_920, height: 1_040 }),
+    },
+  });
+
+  motion.summon({ x: 500, y: 600 });
+  const firstSequence = motion.getState().actionSequence;
+  motion.summon({ x: 700, y: 800 });
+
+  assert.equal(motion.getState().action, "walk");
+  assert.ok(motion.getState().actionSequence > firstSequence);
+});
+
 test("拖拽取消召唤，点击优先选择最近没有出现的动作", () => {
   let position: [number, number] = [100, 200];
   const states: string[] = [];

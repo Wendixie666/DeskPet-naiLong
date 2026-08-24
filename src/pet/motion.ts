@@ -126,6 +126,7 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
         options.window.workAreaAt(targetPoint),
       );
       state.action = "walk";
+      state.actionSequence += 1;
       state.isMoving = true;
       state.lookDirection = undefined;
       if (target.x !== state.position.x) {
