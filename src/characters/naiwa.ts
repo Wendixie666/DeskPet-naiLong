@@ -3,7 +3,7 @@ import type { CharacterConfig } from "../shared/types";
 export const naiwa: CharacterConfig = {
   id: "naiwa",
   name: "奶蛙",
-  assetRoot: "../../素材/奶蛙",
+  assetRoot: "../../素材/奶蛙/processed",
   size: { width: 192, height: 208 },
   speed: 260,
   visual: {
@@ -19,37 +19,37 @@ export const naiwa: CharacterConfig = {
     },
     walk: {
       kind: "sprite",
-      asset: "走路静态.png",
+      asset: "走路静态.processed.png",
       frameCount: 8,
       frameDurationMs: 90,
     },
     wave: {
       kind: "sprite",
-      asset: "打招呼静态.png",
+      asset: "打招呼静态.processed.png",
       frameCount: 4,
       frameDurationMs: 140,
     },
     heart: {
       kind: "sprite",
-      asset: "比心静态.png",
+      asset: "比心静态.processed.png",
       frameCount: 6,
       frameDurationMs: 140,
     },
     egg: {
       kind: "sprite",
-      asset: "蛋静态.png",
+      asset: "蛋静态.processed.png",
       frameCount: 5,
       frameDurationMs: 140,
     },
     poop: {
       kind: "sprite",
-      asset: "粑粑静态.png",
+      asset: "粑粑静态.processed.png",
       frameCount: 8,
       frameDurationMs: 140,
     },
     turnHead: {
       kind: "directional-sprite",
-      assets: ["转头-上右.png", "转头-下右.png"],
+      assets: ["转头-上右.processed.png", "转头-下右.processed.png"],
       frameCount: 8,
       frameDurationMs: 120,
     },
