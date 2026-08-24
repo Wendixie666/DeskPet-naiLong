@@ -10,7 +10,8 @@ export const naiwa: CharacterConfig = {
     contentHeight: 180,
     footAnchor: { x: 96, y: 202 },
   },
-  clickActions: ["wave", "heart", "egg", "poop", "turnUp", "turnDown"],
+  clickActions: ["wave", "heart", "egg", "poop", "turnHead"],
+  trackingAction: "turnHead",
   actions: {
     idle: {
       kind: "image",
@@ -46,15 +47,9 @@ export const naiwa: CharacterConfig = {
       frameCount: 8,
       frameDurationMs: 140,
     },
-    turnUp: {
-      kind: "sprite",
-      asset: "转头-上右.png",
-      frameCount: 8,
-      frameDurationMs: 120,
-    },
-    turnDown: {
-      kind: "sprite",
-      asset: "转头-下右.png",
+    turnHead: {
+      kind: "directional-sprite",
+      assets: ["转头-上右.png", "转头-下右.png"],
       frameCount: 8,
       frameDurationMs: 120,
     },

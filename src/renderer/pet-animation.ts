@@ -6,6 +6,8 @@ import type {
   PetState,
   VisualAdjustment,
 } from "../shared/types";
+import type { DirectionalSpriteAction } from "../shared/types";
+import type { LookDirection } from "../pet/look-direction";
 
 export interface PetAnimator {
   render(state: PetState): void;
@@ -19,6 +21,7 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
   let character: CharacterConfig;
   let animationId = 0;
   let renderedAction: CharacterAction | undefined;
+  let renderedState: PetState | undefined;
 
   function isBlueScreen(red: number, green: number, blue: number): boolean {
     return blue > 120 && blue > red * 1.35 && blue > green * 1.35;
@@ -117,7 +120,120 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
     removeBlueScreen();
   }
 
+  function directionFrame(
+    action: DirectionalSpriteAction,
+    direction: LookDirection,
+  ): { assetIndex: 0 | 1; frameIndex: number; mirrored: boolean } {
+    const mirrored = direction.endsWith("left") || direction === "left";
+    const normalized = direction.replace("-left", "-right") as LookDirection;
+    const frameByDirection: Record<LookDirection, { assetIndex: 0 | 1; frameIndex: number }> = {
+      up: { assetIndex: 0, frameIndex: 0 },
+      "up-right": { assetIndex: 0, frameIndex: 4 },
+      right: { assetIndex: 0, frameIndex: action.frameCount - 1 },
+      "down-right": { assetIndex: 1, frameIndex: 3 },
+      down: { assetIndex: 1, frameIndex: 0 },
+      "down-left": { assetIndex: 1, frameIndex: 3 },
+      left: { assetIndex: 0, frameIndex: action.frameCount - 1 },
+      "up-left": { assetIndex: 0, frameIndex: 4 },
+    };
+    return { ...frameByDirection[normalized], mirrored };
+  }
+
+  function drawDirectionalFrame(
+    sources: HTMLImageElement[],
+    bounds: Bounds[],
+    action: DirectionalSpriteAction,
+    frame: { assetIndex: number; frameIndex: number; mirrored: boolean },
+  ): void {
+    const source = sources[frame.assetIndex];
+    const sourceWidth = source.naturalWidth / action.frameCount;
+    const placement = visualPlacement(bounds[frame.assetIndex], action.adjustment);
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.save();
+    if (frame.mirrored) {
+      context.translate(canvas.width, 0);
+      context.scale(-1, 1);
+    }
+    context.drawImage(
+      source,
+      sourceWidth * frame.frameIndex,
+      0,
+      sourceWidth,
+      source.naturalHeight,
+      placement.x,
+      placement.y,
+      sourceWidth * placement.scale,
+      source.naturalHeight * placement.scale,
+    );
+    context.restore();
+    removeBlueScreen();
+  }
+
+  function introFrames(action: DirectionalSpriteAction) {
+    const lastFrame = action.frameCount - 1;
+    return [
+      ...Array.from({ length: action.frameCount }, (_, frameIndex) => ({
+        assetIndex: 1,
+        frameIndex,
+        mirrored: false,
+      })),
+      ...Array.from({ length: action.frameCount }, (_, frameIndex) => ({
+        assetIndex: 0,
+        frameIndex,
+        mirrored: false,
+      })),
+      ...Array.from({ length: action.frameCount }, (_, frameIndex) => ({
+        assetIndex: 0,
+        frameIndex: lastFrame - frameIndex,
+        mirrored: true,
+      })),
+      ...Array.from({ length: action.frameCount }, (_, frameIndex) => ({
+        assetIndex: 1,
+        frameIndex: lastFrame - frameIndex,
+        mirrored: true,
+      })),
+    ];
+  }
+
   function playAction(action: CharacterAction, ownAnimationId: number): void {
+    if (action.kind === "directional-sprite") {
+      const directionalAction = action;
+      const sources = directionalAction.assets.map((asset) => {
+        const source = new Image();
+        source.src = `${character.assetRoot}/${encodeURIComponent(asset)}`;
+        return source;
+      });
+      Promise.all(sources.map((source) => new Promise<void>((resolve) => {
+        source.addEventListener("load", () => resolve(), { once: true });
+      }))).then(() => {
+        const bounds = sources.map((source) => findVisibleBounds(source, directionalAction.frameCount));
+        const frames = introFrames(directionalAction);
+        const startedAt = performance.now();
+
+        function draw(now: number): void {
+          if (animationId !== ownAnimationId) {
+            return;
+          }
+          const elapsed = now - startedAt;
+          if (elapsed < frames.length * directionalAction.frameDurationMs) {
+            const frame = frames[Math.floor(elapsed / directionalAction.frameDurationMs)];
+            drawDirectionalFrame(sources, bounds, directionalAction, frame);
+          } else {
+            const direction = renderedState?.lookDirection ?? "right";
+            drawDirectionalFrame(
+              sources,
+              bounds,
+              directionalAction,
+              directionFrame(directionalAction, direction),
+            );
+          }
+          requestAnimationFrame(draw);
+        }
+
+        requestAnimationFrame(draw);
+      });
+      return;
+    }
     const source = new Image();
     source.src = `${character.assetRoot}/${encodeURIComponent(action.asset)}`;
     source.addEventListener("load", () => {
@@ -145,7 +261,9 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
 
   function render(state: PetState): void {
     const action = character.actions[state.action] ?? character.actions.idle;
-    canvas.classList.toggle("facing-left", state.facing === "left");
+    renderedState = state;
+    const followsMouse = action.kind === "directional-sprite";
+    canvas.classList.toggle("facing-left", followsMouse ? false : state.facing === "left");
     if (action === renderedAction) {
       return;
     }

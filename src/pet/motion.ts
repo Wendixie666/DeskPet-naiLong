@@ -1,4 +1,5 @@
 import type { CharacterConfig, Bounds, PetState, Point } from "../shared/types";
+import { resolveLookDirection } from "./look-direction.ts";
 
 interface PetMotionWindow {
   getBounds(): Bounds;
@@ -8,12 +9,13 @@ interface PetMotionWindow {
 }
 
 interface PetMotionOptions {
-  character: Pick<CharacterConfig, "clickActions" | "speed" | "visual">;
+  character: Pick<CharacterConfig, "clickActions" | "speed" | "trackingAction" | "visual">;
   initialPosition: Point;
   onStateChange(state: PetState): void;
   random?: () => number;
   scale: number;
   window: PetMotionWindow;
+  cursorPosition?: () => Point;
 }
 
 export interface PetMotion {
@@ -53,6 +55,21 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
     position: { ...options.initialPosition },
   };
 
+  function updateLookDirection(): boolean {
+    if (!options.cursorPosition || state.action !== options.character.trackingAction) {
+      return false;
+    }
+    const nextDirection = resolveLookDirection(
+      options.cursorPosition(),
+      options.window.getBounds(),
+    );
+    if (state.lookDirection === nextDirection) {
+      return false;
+    }
+    state.lookDirection = nextDirection;
+    return true;
+  }
+
   function snapshot(): PetState {
     return {
       ...state,
@@ -67,6 +84,7 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
         options.character.clickActions.length - 1,
       );
       state.action = options.character.clickActions[index];
+      state.lookDirection = undefined;
       options.onStateChange(snapshot());
     },
 
@@ -74,6 +92,7 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
       const [x, y] = options.window.getPosition();
       target = undefined;
       state.action = "idle";
+      state.lookDirection = undefined;
       state.isMoving = false;
       state.position = {
         x: x + Math.round(deltaX),
@@ -101,6 +120,7 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
       );
       state.action = "walk";
       state.isMoving = true;
+      state.lookDirection = undefined;
       if (target.x !== state.position.x) {
         state.facing = target.x < state.position.x ? "left" : "right";
       }
@@ -109,6 +129,9 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
 
     tick(deltaMs) {
       if (!target) {
+        if (updateLookDirection()) {
+          options.onStateChange(snapshot());
+        }
         return;
       }
 
@@ -121,6 +144,7 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
         state.position = target;
         state.action = "idle";
         state.isMoving = false;
+        state.lookDirection = undefined;
         target = undefined;
       } else {
         state.position = {
@@ -129,6 +153,7 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
         };
         state.action = "walk";
         state.isMoving = true;
+        state.lookDirection = undefined;
       }
       options.window.setPosition(
         Math.round(state.position.x),

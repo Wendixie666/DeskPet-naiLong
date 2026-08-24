@@ -40,6 +40,11 @@ let settingsManager: SettingsManager;
 let character: CharacterConfig = registry.get(defaultSettings.characterId);
 let appliedScale = defaultSettings.petScale;
 let registeredShortcut: string | undefined;
+let pendingSummonDiagnostic: {
+  cursor: Point;
+  footAnchor: Point;
+  computedTarget: Point;
+} | undefined;
 
 function bottomRightPosition(size: Size): Point {
   const { workArea } = screen.getPrimaryDisplay();
@@ -89,8 +94,25 @@ function configurePet(position: Point, scale: number): void {
     character,
     initialPosition: position,
     scale,
+    cursorPosition: () => screen.getCursorScreenPoint(),
     onStateChange(state) {
       petWindow?.webContents.send("pet:state", state);
+      if (state.action === "idle" && pendingSummonDiagnostic && petWindow) {
+        const bounds = petWindow.getBounds();
+        const actualFoot = {
+          x: bounds.x + pendingSummonDiagnostic.footAnchor.x,
+          y: bounds.y + pendingSummonDiagnostic.footAnchor.y,
+        };
+        console.info("[DIAG-summon]", JSON.stringify({
+          actual_foot: actualFoot,
+          error: {
+            x: actualFoot.x - pendingSummonDiagnostic.cursor.x,
+            y: actualFoot.y - pendingSummonDiagnostic.cursor.y,
+          },
+          final_window_bounds: bounds,
+        }));
+        pendingSummonDiagnostic = undefined;
+      }
     },
     window: {
       getBounds: () => petWindow!.getBounds(),
@@ -112,7 +134,44 @@ export function summon(x: number, y: number): void {
 
 function summonAtCursor(): void {
   const cursor = screen.getCursorScreenPoint();
+  if (!petWindow || !motion) {
+    return;
+  }
+  const bounds = petWindow.getBounds();
+  const footAnchor = {
+    x: character.visual.footAnchor.x * appliedScale,
+    y: character.visual.footAnchor.y * appliedScale,
+  };
+  const workArea = screen.getDisplayNearestPoint(cursor).workArea;
+  const computedTarget = constrainPosition({
+    x: cursor.x - footAnchor.x,
+    y: cursor.y - footAnchor.y,
+  }, bounds, workArea);
+  pendingSummonDiagnostic = { cursor, footAnchor, computedTarget };
+  console.info("[DIAG-summon]", JSON.stringify({
+    cursor,
+    footAnchor,
+    computed_target: computedTarget,
+    before_window_bounds: bounds,
+  }));
   summon(cursor.x, cursor.y);
+  console.info("[DIAG-summon]", JSON.stringify({
+    after_summon_window_bounds: petWindow.getBounds(),
+  }));
+}
+
+async function logGpuDiagnostics(): Promise<void> {
+  try {
+    console.info("[DIAG-gpu]", JSON.stringify({
+      commandLine: process.argv.slice(1),
+      featureStatus: app.getGPUFeatureStatus(),
+      info: await app.getGPUInfo("basic"),
+    }));
+  } catch (error) {
+    console.info("[DIAG-gpu]", JSON.stringify({
+      error: error instanceof Error ? error.message : String(error),
+    }));
+  }
 }
 
 function tryRegisterShortcut(shortcut: string): boolean {
@@ -298,6 +357,7 @@ function saveLastPosition(): void {
 }
 
 app.whenReady().then(() => {
+  void logGpuDiagnostics();
   settingsManager = createSettingsManager(
     path.join(app.getPath("userData"), "settings.json"),
     (id) => registry.has(id),

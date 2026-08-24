@@ -1,5 +1,7 @@
 export type Facing = "left" | "right";
 
+import type { LookDirection } from "../pet/look-direction";
+
 export type PetAction = string;
 
 export interface Point {
@@ -28,6 +30,7 @@ export interface PetState {
   action: PetAction;
   facing: Facing;
   isMoving: boolean;
+  lookDirection?: LookDirection;
   position: Point;
 }
 
@@ -45,7 +48,15 @@ export interface SpriteAction {
   kind: "sprite";
 }
 
-export type CharacterAction = ImageAction | SpriteAction;
+export interface DirectionalSpriteAction {
+  adjustment?: VisualAdjustment;
+  assets: [string, string];
+  frameCount: number;
+  frameDurationMs: number;
+  kind: "directional-sprite";
+}
+
+export type CharacterAction = ImageAction | SpriteAction | DirectionalSpriteAction;
 
 export interface CharacterConfig {
   actions: Record<string, CharacterAction>;
@@ -55,6 +66,7 @@ export interface CharacterConfig {
   name: string;
   size: Size;
   speed: number;
+  trackingAction?: string;
   visual: CharacterVisual;
 }
 

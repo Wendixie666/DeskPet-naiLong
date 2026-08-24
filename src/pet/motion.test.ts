@@ -131,3 +131,43 @@ test("缩放后召回仍将脚底锚点对齐到目标坐标", () => {
   assert.equal(footPosition.x, 500);
   assert.ok(Math.abs(footPosition.y - 600) <= 0.5);
 });
+
+test("转头动作会根据主进程提供的鼠标坐标更新目光方向", () => {
+  let cursor = { x: 200, y: 0 };
+  const motion = createPetMotion({
+    character: {
+      clickActions: ["turnHead"],
+      speed: 100,
+      trackingAction: "turnHead",
+      visual: {
+        contentHeight: 180,
+        footAnchor: { x: 96, y: 202 },
+      },
+    },
+    cursorPosition: () => cursor,
+    initialPosition: { x: 100, y: 100 },
+    onStateChange() {},
+    random: () => 0,
+    scale: 1,
+    window: {
+      getBounds() {
+        return { x: 100, y: 100, width: 200, height: 200 };
+      },
+      getPosition() {
+        return [100, 100];
+      },
+      setPosition() {},
+      workAreaAt() {
+        return { x: 0, y: 0, width: 1_920, height: 1_040 };
+      },
+    },
+  });
+
+  motion.click();
+  motion.tick(16);
+  assert.equal(motion.getState().lookDirection, "up");
+
+  cursor = { x: 400, y: 200 };
+  motion.tick(16);
+  assert.equal(motion.getState().lookDirection, "right");
+});
