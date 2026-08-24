@@ -9,7 +9,6 @@ test("点击会从角色候选动作中切换状态", () => {
     initialPosition: { x: 100, y: 200 },
     random: () => 0.75,
     speed: 200,
-    size: { width: 192, height: 208 },
   });
 
   const state = pet.click();
@@ -22,10 +21,9 @@ test("summon 朝目标行走并根据水平方向改变朝向", () => {
     clickActions: ["wave"],
     initialPosition: { x: 100, y: 200 },
     speed: 100,
-    size: { width: 100, height: 100 },
   });
 
-  pet.summon(350, 300);
+  pet.summon(300, 200);
   const state = pet.tick(500);
 
   assert.equal(state.action, "walk");
@@ -33,12 +31,11 @@ test("summon 朝目标行走并根据水平方向改变朝向", () => {
   assert.deepEqual(state.position, { x: 150, y: 200 });
 });
 
-test("summon 到达目标后恢复 idle，目标点表示角色脚底中心", () => {
+test("summon 到达目标后恢复 idle，Pet 层不换算窗口尺寸", () => {
   const pet = createPetController({
     clickActions: ["wave"],
     initialPosition: { x: 300, y: 300 },
     speed: 200,
-    size: { width: 100, height: 100 },
   });
 
   pet.summon(100, 200);
@@ -46,7 +43,7 @@ test("summon 到达目标后恢复 idle，目标点表示角色脚底中心", ()
 
   assert.equal(state.action, "idle");
   assert.equal(state.facing, "left");
-  assert.deepEqual(state.position, { x: 50, y: 100 });
+  assert.deepEqual(state.position, { x: 100, y: 200 });
   assert.equal(state.isMoving, false);
 });
 
@@ -55,7 +52,6 @@ test("拖拽会取消尚未完成的 summon", () => {
     clickActions: ["wave"],
     initialPosition: { x: 100, y: 200 },
     speed: 100,
-    size: { width: 100, height: 100 },
   });
 
   pet.summon(500, 500);

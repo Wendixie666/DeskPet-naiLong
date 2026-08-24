@@ -26,18 +26,12 @@ body,
   cursor: grabbing;
 }
 
-#pet-image,
 #pet-canvas {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: contain;
   transform-origin: center;
   pointer-events: none;
-}
-
-#pet-canvas {
-  display: none;
 }
 
 .facing-left {

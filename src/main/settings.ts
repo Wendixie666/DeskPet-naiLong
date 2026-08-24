@@ -1,0 +1,97 @@
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import path from "node:path";
+
+import type { AppSettings, DefaultPosition, Point } from "../shared/types";
+
+const supportedScales = new Set([0.75, 1, 1.25, 1.5]);
+
+export const defaultSettings: AppSettings = {
+  characterId: "naiwa",
+  defaultPosition: "bottom-right",
+  petScale: 1,
+  summonShortcut: "CommandOrControl+Alt+P",
+};
+
+export interface SettingsStore {
+  load(): AppSettings;
+  normalize(value: unknown): AppSettings;
+  save(settings: AppSettings): AppSettings;
+}
+
+function isPoint(value: unknown): value is Point {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const point = value as Partial<Point>;
+  return Number.isFinite(point.x) && Number.isFinite(point.y);
+}
+
+function normalizeSettings(
+  value: unknown,
+  isCharacterId: (id: string) => boolean,
+): AppSettings {
+  if (!value || typeof value !== "object") {
+    return { ...defaultSettings };
+  }
+
+  const candidate = value as Partial<AppSettings>;
+  const characterId = typeof candidate.characterId === "string"
+    && isCharacterId(candidate.characterId)
+    ? candidate.characterId
+    : defaultSettings.characterId;
+  const petScale = typeof candidate.petScale === "number"
+    && supportedScales.has(candidate.petScale)
+    ? candidate.petScale
+    : defaultSettings.petScale;
+  const defaultPosition: DefaultPosition = candidate.defaultPosition === "last"
+    || candidate.defaultPosition === "bottom-right"
+    ? candidate.defaultPosition
+    : defaultSettings.defaultPosition;
+  const summonShortcut = typeof candidate.summonShortcut === "string"
+    && candidate.summonShortcut.trim().length > 0
+    ? candidate.summonShortcut.trim()
+    : defaultSettings.summonShortcut;
+
+  const settings: AppSettings = {
+    characterId,
+    defaultPosition,
+    petScale,
+    summonShortcut,
+  };
+  if (isPoint(candidate.lastPosition)) {
+    settings.lastPosition = {
+      x: Math.round(candidate.lastPosition.x),
+      y: Math.round(candidate.lastPosition.y),
+    };
+  }
+  return settings;
+}
+
+export function createSettingsStore(
+  filePath: string,
+  isCharacterId: (id: string) => boolean,
+): SettingsStore {
+  return {
+    load() {
+      try {
+        const content = readFileSync(filePath, "utf8");
+        return normalizeSettings(JSON.parse(content), isCharacterId);
+      } catch {
+        return { ...defaultSettings };
+      }
+    },
+
+    normalize(value) {
+      return normalizeSettings(value, isCharacterId);
+    },
+
+    save(settings) {
+      const normalized = normalizeSettings(settings, isCharacterId);
+      mkdirSync(path.dirname(filePath), { recursive: true });
+      const temporaryPath = `${filePath}.tmp`;
+      writeFileSync(temporaryPath, `${JSON.stringify(normalized, null, 2)}\n`, "utf8");
+      renameSync(temporaryPath, filePath);
+      return normalized;
+    },
+  };
+}

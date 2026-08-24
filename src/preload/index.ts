@@ -19,6 +19,16 @@ contextBridge.exposeInMainWorld("desktopPet", {
     ipcRenderer.on("pet:state", handler);
     return () => ipcRenderer.removeListener("pet:state", handler);
   },
+  onSnapshotChange(listener: (snapshot: PetSnapshot) => void): () => void {
+    const handler = (_event: Electron.IpcRendererEvent, snapshot: PetSnapshot) => {
+      listener(snapshot);
+    };
+    ipcRenderer.on("pet:snapshot-changed", handler);
+    return () => ipcRenderer.removeListener("pet:snapshot-changed", handler);
+  },
+  openContextMenu(): void {
+    ipcRenderer.send("pet:context-menu");
+  },
   summon(x: number, y: number): void {
     ipcRenderer.send("pet:summon", x, y);
   },

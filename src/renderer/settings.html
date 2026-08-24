@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>桌宠设置</title>
+    <link rel="stylesheet" href="./settings.css" />
+  </head>
+  <body>
+    <main>
+      <h1>桌宠设置</h1>
+      <form id="settings-form">
+        <label>
+          <span>桌宠</span>
+          <select id="character" name="character"></select>
+        </label>
+
+        <label>
+          <span>桌宠大小</span>
+          <select id="pet-scale" name="petScale">
+            <option value="0.75">75%</option>
+            <option value="1">100%</option>
+            <option value="1.25">125%</option>
+            <option value="1.5">150%</option>
+          </select>
+        </label>
+
+        <fieldset>
+          <legend>默认位置</legend>
+          <label class="choice">
+            <input type="radio" name="defaultPosition" value="bottom-right" />
+            <span>右下角</span>
+          </label>
+          <label class="choice">
+            <input type="radio" name="defaultPosition" value="last" />
+            <span>上次位置</span>
+          </label>
+        </fieldset>
+
+        <label>
+          <span>召唤快捷键</span>
+          <input id="summon-shortcut" name="summonShortcut" required />
+          <small>例如 CommandOrControl+Alt+P</small>
+        </label>
+
+        <div class="actions">
+          <p id="status" role="status"></p>
+          <button type="submit">保存并应用</button>
+        </div>
+      </form>
+    </main>
+    <script type="module" src="../../dist/renderer/settings.js"></script>
+  </body>
+</html>

@@ -1,10 +1,9 @@
-import type { PetAction, PetState, Point, Size } from "../shared/types";
+import type { PetAction, PetState, Point } from "../shared/types";
 
 interface PetControllerOptions {
   clickActions: PetAction[];
   initialPosition: Point;
   random?: () => number;
-  size: Size;
   speed: number;
 }
 
@@ -56,10 +55,7 @@ export function createPetController(options: PetControllerOptions): PetControlle
     },
 
     summon(x, y) {
-      target = {
-        x: x - options.size.width / 2,
-        y: y - options.size.height,
-      };
+      target = { x, y };
       state.action = "walk";
       state.isMoving = true;
 

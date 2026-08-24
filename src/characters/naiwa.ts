@@ -6,6 +6,10 @@ export const naiwa: CharacterConfig = {
   assetRoot: "../../素材/奶蛙",
   size: { width: 192, height: 208 },
   speed: 260,
+  visual: {
+    contentHeight: 180,
+    footAnchor: { x: 96, y: 202 },
+  },
   clickActions: ["wave", "heart", "egg", "poop", "turnUp", "turnDown"],
   actions: {
     idle: {
