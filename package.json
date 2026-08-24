@@ -5,8 +5,9 @@
   "description": "奶蛙桌宠的最小可用版本",
   "main": "dist/main/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.renderer.json",
     "start": "npm run build && electron .",
+    "test:render": "npm run build && electron scripts/check-render.cjs",
     "test": "node --experimental-strip-types --test src/**/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
