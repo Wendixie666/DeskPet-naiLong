@@ -39,14 +39,11 @@ npm start
 
 ## 当前功能
 
-- 透明、无边框、置顶窗口，默认位于主屏工作区右下角；
-- 点击随机切换奶蛙动作；
+- 奶蛙有不同的形态和动作，点击切换奶蛙动作；![alt text](image.png)
 - 鼠标拖拽移动桌宠；
-- 通过统一的 `summon(x, y)` 入口自动行走、切换朝向，并在到达后恢复 idle；
-- 统一动作的视觉尺寸和脚底中心锚点；
-- 全局快捷键将桌宠召唤到当前鼠标所在屏幕；
-- 右键打开设置窗口，可修改角色、大小、默认位置和召唤快捷键；
-- 使用 `CharacterRegistry` 和 `CharacterConfig` 以数据驱动方式管理角色。
+- 快捷键将桌宠召唤到当前鼠标光标所在屏幕位置；![alt text](image-1.png)
+- 转头状态下有简单的目光跟随光标功能![alt text](<屏幕截图 2026-08-24 180151.png>)
+- 右键打开设置窗口，可修改角色、大小、默认位置和召唤快捷键![alt text](image-2.png)
 
 ## 使用方式
 
@@ -67,7 +64,7 @@ npm start
 
 ## 平台说明
 
-目标平台是 Windows、macOS 和 Linux X11/XWayland。
+目标平台是 Windows、macOS 和 Linux X11/XWayland，但是目前开发和调试都只是在win和linux上尝试过，mac可能会有bug。
 
 - Windows、macOS 和 Linux X11/XWayland 支持完整的窗口移动和召唤流程；
 - Linux 推荐使用 X11 或 XWayland。原生 Wayland 不保证程序化窗口定位、调整大小和逐帧移动；
