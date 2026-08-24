@@ -1,0 +1,17 @@
+{
+  "name": "deskpet-nailong",
+  "version": "0.1.0",
+  "private": true,
+  "description": "奶蛙桌宠的最小可用版本",
+  "main": "dist/main/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "npm run build && electron .",
+    "test": "node --experimental-strip-types --test src/**/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "electron": "^43.4.1",
+    "typescript": "^5.8.3"
+  }
+}

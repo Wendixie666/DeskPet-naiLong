@@ -1,0 +1,58 @@
+import type { CharacterConfig } from "../shared/types";
+
+export const naiwa: CharacterConfig = {
+  id: "naiwa",
+  name: "奶蛙",
+  assetRoot: "../../素材/奶蛙",
+  size: { width: 192, height: 208 },
+  speed: 260,
+  clickActions: ["wave", "heart", "egg", "poop", "turnUp", "turnDown"],
+  actions: {
+    idle: {
+      kind: "image",
+      asset: "all-states.gif",
+    },
+    walk: {
+      kind: "sprite",
+      asset: "走路静态.png",
+      frameCount: 8,
+      frameDurationMs: 90,
+    },
+    wave: {
+      kind: "sprite",
+      asset: "打招呼静态.png",
+      frameCount: 4,
+      frameDurationMs: 140,
+    },
+    heart: {
+      kind: "sprite",
+      asset: "比心静态.png",
+      frameCount: 6,
+      frameDurationMs: 140,
+    },
+    egg: {
+      kind: "sprite",
+      asset: "蛋静态.png",
+      frameCount: 5,
+      frameDurationMs: 140,
+    },
+    poop: {
+      kind: "sprite",
+      asset: "粑粑静态.png",
+      frameCount: 8,
+      frameDurationMs: 140,
+    },
+    turnUp: {
+      kind: "sprite",
+      asset: "转头-上右.png",
+      frameCount: 8,
+      frameDurationMs: 120,
+    },
+    turnDown: {
+      kind: "sprite",
+      asset: "转头-下右.png",
+      frameCount: 8,
+      frameDurationMs: 120,
+    },
+  },
+};
