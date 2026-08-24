@@ -25,6 +25,7 @@ app.whenReady().then(async () => {
     defaultPosition: "bottom-right",
     petScale: 1,
     summonShortcut: "CommandOrControl+Alt+P",
+    theme: "light",
   };
   ipcMain.handle("pet:snapshot", () => ({
     character: naiwa,

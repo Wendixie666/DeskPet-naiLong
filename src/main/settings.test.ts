@@ -81,6 +81,7 @@ test("设置文件缺失时使用默认值，保存后可重新读取", () => {
       petScale: 1.25,
       defaultPosition: "last",
       lastPosition: { x: -300, y: 80 },
+      theme: "dark",
     });
 
     manager.saveLastPosition({ x: -300, y: 80 });
@@ -94,6 +95,7 @@ test("设置文件缺失时使用默认值，保存后可重新读取", () => {
       petScale: 1.25,
       defaultPosition: "last",
       lastPosition: { x: -300, y: 80 },
+      theme: "dark",
     });
     assert.doesNotThrow(() => JSON.parse(readFileSync(filePath, "utf8")));
   } finally {
@@ -109,6 +111,7 @@ test("无效设置字段回退到默认值", () => {
     petScale: 9,
     defaultPosition: "center",
     summonShortcut: "",
+    theme: "neon",
   }));
 
   try {

@@ -253,11 +253,14 @@ function showSettingsWindow(): void {
   }
 
   settingsWindow = new BrowserWindow({
+    backgroundMaterial: "acrylic",
+    backgroundColor: "#00000000",
     width: 460,
     height: 500,
     minWidth: 420,
     minHeight: 460,
     title: "桌宠设置",
+    transparent: true,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

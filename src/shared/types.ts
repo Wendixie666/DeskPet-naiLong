@@ -77,6 +77,7 @@ export interface PetSnapshot {
 }
 
 export type DefaultPosition = "bottom-right" | "last";
+export type AppTheme = "light" | "dark" | "transparent";
 
 export interface AppSettings {
   characterId: string;
@@ -84,6 +85,7 @@ export interface AppSettings {
   lastPosition?: Point;
   petScale: number;
   summonShortcut: string;
+  theme: AppTheme;
 }
 
 export interface CharacterSummary {

@@ -1,7 +1,40 @@
 :root {
-  color: #26231f;
-  background: #f7f4ed;
+  --page-background: #fff;
+  --surface-background: #fff;
+  --text-color: #111;
+  --muted-color: #666;
+  --border-color: #d0d0d0;
+  --fieldset-border-color: #d8d8d8;
+  --accent-color: #4a4a4a;
+  --accent-text-color: #fff;
+  color: var(--text-color);
+  background: var(--page-background);
+  color-scheme: light;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+:root[data-theme="dark"] {
+  --page-background: #181818;
+  --surface-background: #292929;
+  --text-color: #f4f4f4;
+  --muted-color: #b8b8b8;
+  --border-color: #666;
+  --fieldset-border-color: #555;
+  --accent-color: #d6d6d6;
+  --accent-text-color: #181818;
+  color-scheme: dark;
+}
+
+:root[data-theme="transparent"] {
+  --page-background: transparent;
+  --surface-background: rgb(35 35 35 / 68%);
+  --text-color: #fff;
+  --muted-color: #e0e0e0;
+  --border-color: rgb(255 255 255 / 55%);
+  --fieldset-border-color: rgb(255 255 255 / 45%);
+  --accent-color: rgb(255 255 255 / 82%);
+  --accent-text-color: #202020;
+  color-scheme: dark;
 }
 
 * {
@@ -10,6 +43,13 @@
 
 body {
   margin: 0;
+  min-height: 100vh;
+  background: var(--page-background);
+}
+
+:root[data-theme="transparent"] body {
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
 }
 
 main {
@@ -38,15 +78,16 @@ select,
 input,
 button {
   min-height: 38px;
-  border: 1px solid #c9c2b5;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   font: inherit;
+  color: var(--text-color);
 }
 
 select,
 input {
   padding: 7px 10px;
-  background: #fff;
+  background: var(--surface-background);
 }
 
 fieldset {
@@ -54,7 +95,7 @@ fieldset {
   gap: 24px;
   margin: 0;
   padding: 12px 14px;
-  border: 1px solid #d7d0c4;
+  border: 1px solid var(--fieldset-border-color);
   border-radius: 8px;
 }
 
@@ -74,7 +115,7 @@ legend {
 }
 
 small {
-  color: #756f66;
+  color: var(--muted-color);
   font-weight: 400;
 }
 
@@ -87,7 +128,7 @@ small {
 
 #status {
   margin: 0;
-  color: #287243;
+  color: var(--muted-color);
   font-size: 14px;
 }
 
@@ -97,9 +138,9 @@ small {
 
 button {
   padding: 8px 18px;
-  border-color: #6f8d3d;
-  color: #fff;
-  background: #6f8d3d;
+  border-color: var(--accent-color);
+  color: var(--accent-text-color);
+  background: var(--accent-color);
   cursor: pointer;
 }
 

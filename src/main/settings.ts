@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-import type { AppSettings, DefaultPosition, Point } from "../shared/types";
+import type { AppSettings, AppTheme, DefaultPosition, Point } from "../shared/types";
 
 export const supportedPetScales = [0.75, 1, 1.25, 1.5];
 const supportedScales = new Set(supportedPetScales);
@@ -11,6 +11,7 @@ export const defaultSettings: AppSettings = {
   defaultPosition: "bottom-right",
   petScale: 1,
   summonShortcut: "CommandOrControl+Alt+P",
+  theme: "light",
 };
 
 interface SettingsStore {
@@ -59,12 +60,18 @@ function normalizeSettings(
     && candidate.summonShortcut.trim().length > 0
     ? candidate.summonShortcut.trim()
     : defaultSettings.summonShortcut;
+  const theme: AppTheme = candidate.theme === "dark"
+    || candidate.theme === "transparent"
+    || candidate.theme === "light"
+    ? candidate.theme
+    : defaultSettings.theme;
 
   const settings: AppSettings = {
     characterId,
     defaultPosition,
     petScale,
     summonShortcut,
+    theme,
   };
   if (isPoint(candidate.lastPosition)) {
     settings.lastPosition = {
