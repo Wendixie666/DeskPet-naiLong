@@ -12,7 +12,6 @@ interface PetMotionOptions {
   character: Pick<CharacterConfig, "clickActions" | "speed" | "trackingAction" | "visual">;
   initialPosition: Point;
   onStateChange(state: PetState): void;
-  random?: () => number;
   scale: number;
   window: PetMotionWindow;
   cursorPosition?: () => Point;
@@ -46,9 +45,10 @@ function summonPosition(
 }
 
 export function createPetMotion(options: PetMotionOptions): PetMotion {
-  const random = options.random ?? Math.random;
   let target: Point | undefined;
+  let recentActions: string[] = [];
   const state: PetState = {
+    actionSequence: 0,
     action: "idle",
     facing: "right",
     isMoving: false,
@@ -77,13 +77,20 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
     };
   }
 
+  function nextAction(): string {
+    const action = options.character.clickActions.find(
+      (candidate) => !recentActions.includes(candidate),
+    ) ?? options.character.clickActions[0];
+    recentActions = [...recentActions, action].slice(
+      -Math.max(options.character.clickActions.length - 1, 0),
+    );
+    return action;
+  }
+
   return {
     click() {
-      const index = Math.min(
-        Math.floor(random() * options.character.clickActions.length),
-        options.character.clickActions.length - 1,
-      );
-      state.action = options.character.clickActions[index];
+      state.action = nextAction();
+      state.actionSequence += 1;
       state.lookDirection = undefined;
       options.onStateChange(snapshot());
     },

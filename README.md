@@ -1,6 +1,6 @@
 # DeskPet-naiLong
 
-一个使用 Electron、TypeScript 和原生 HTML/CSS 实现的极简桌宠。当前角色是奶蛙，后续可通过角色配置增加牛来、美团袋鼠或自定义角色。
+一个使用 Electron、TypeScript 和原生 HTML/CSS 实现的极简桌宠。当前角色是奶蛙，后续计划新增其他角色：牛来、美团袋鼠以及自定义角色的功能。
 
 当前已支持：
 

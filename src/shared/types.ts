@@ -27,6 +27,7 @@ export interface CharacterVisual {
 }
 
 export interface PetState {
+  actionSequence: number;
   action: PetAction;
   facing: Facing;
   isMoving: boolean;

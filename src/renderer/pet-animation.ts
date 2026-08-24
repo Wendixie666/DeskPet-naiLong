@@ -21,6 +21,7 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
   let character: CharacterConfig;
   let animationId = 0;
   let renderedAction: CharacterAction | undefined;
+  let renderedActionSequence = -1;
   let renderedState: PetState | undefined;
 
   function isBlueScreen(red: number, green: number, blue: number): boolean {
@@ -124,19 +125,26 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
     action: DirectionalSpriteAction,
     direction: LookDirection,
   ): { assetIndex: 0 | 1; frameIndex: number; mirrored: boolean } {
-    const mirrored = direction.endsWith("left") || direction === "left";
-    const normalized = direction.replace("-left", "-right") as LookDirection;
-    const frameByDirection: Record<LookDirection, { assetIndex: 0 | 1; frameIndex: number }> = {
-      up: { assetIndex: 0, frameIndex: 0 },
-      "up-right": { assetIndex: 0, frameIndex: 4 },
-      right: { assetIndex: 0, frameIndex: action.frameCount - 1 },
-      "down-right": { assetIndex: 1, frameIndex: 3 },
-      down: { assetIndex: 1, frameIndex: 0 },
-      "down-left": { assetIndex: 1, frameIndex: 3 },
-      left: { assetIndex: 0, frameIndex: action.frameCount - 1 },
-      "up-left": { assetIndex: 0, frameIndex: 4 },
+    const lastFrame = action.frameCount - 1;
+    const frameByDirection: Record<LookDirection, { assetIndex: 0 | 1; frameIndex: number; mirrored: boolean }> = {
+      up: { assetIndex: 0, frameIndex: 0, mirrored: false },
+      "up-near-right": { assetIndex: 0, frameIndex: 2, mirrored: false },
+      "up-right": { assetIndex: 0, frameIndex: 4, mirrored: false },
+      "right-near-up": { assetIndex: 0, frameIndex: 6, mirrored: false },
+      right: { assetIndex: 0, frameIndex: lastFrame, mirrored: false },
+      "right-near-down": { assetIndex: 1, frameIndex: 6, mirrored: false },
+      "down-right": { assetIndex: 1, frameIndex: 4, mirrored: false },
+      "down-near-right": { assetIndex: 1, frameIndex: 2, mirrored: false },
+      down: { assetIndex: 1, frameIndex: 0, mirrored: false },
+      "down-near-left": { assetIndex: 1, frameIndex: 2, mirrored: true },
+      "down-left": { assetIndex: 1, frameIndex: 4, mirrored: true },
+      "left-near-down": { assetIndex: 1, frameIndex: 6, mirrored: true },
+      left: { assetIndex: 0, frameIndex: lastFrame, mirrored: true },
+      "left-near-up": { assetIndex: 0, frameIndex: 6, mirrored: true },
+      "up-left": { assetIndex: 0, frameIndex: 4, mirrored: true },
+      "up-near-left": { assetIndex: 0, frameIndex: 2, mirrored: true },
     };
-    return { ...frameByDirection[normalized], mirrored };
+    return frameByDirection[direction];
   }
 
   function drawDirectionalFrame(
@@ -264,10 +272,11 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
     renderedState = state;
     const followsMouse = action.kind === "directional-sprite";
     canvas.classList.toggle("facing-left", followsMouse ? false : state.facing === "left");
-    if (action === renderedAction) {
+    if (action === renderedAction && state.actionSequence === renderedActionSequence) {
       return;
     }
     renderedAction = action;
+    renderedActionSequence = state.actionSequence;
     animationId += 1;
     playAction(action, animationId);
   }
