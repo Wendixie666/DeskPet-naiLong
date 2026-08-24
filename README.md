@@ -12,21 +12,13 @@
 - npm
 - Windows、macOS 或 Linux X11/XWayland
 
-Windows 如果尚未安装 Node.js，可以在 PowerShell 或命令提示符中执行：
+如果尚未安装 Node.js，可以从 [Node.js 官网](https://nodejs.org/en/download) 下载
 
+Windows 则可以在 PowerShell 或命令提示符中执行：
 ```powershell
 winget install --id OpenJS.NodeJS.LTS -e
 ```
 
-安装完成后请重新打开终端，并确认 Node.js 和 npm 已可用：
-
-```powershell
-node --version
-npm --version
-```
-如果不可用，应该是要配置环境变量再刷新，安装完成后可以再cmd运行后续命令。
-
-`node --version` 应显示 `v22` 或更高版本。也可以从 [Node.js 官网](https://nodejs.org/en/download) 下载 Windows 安装程序。
 
 ### 安装并启动
 
