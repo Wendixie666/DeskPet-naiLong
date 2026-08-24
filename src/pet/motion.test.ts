@@ -89,3 +89,45 @@ test("拖拽取消召唤，点击从角色动作中选择状态", () => {
   assert.equal(motion.getState().action, "heart");
   assert.deepEqual(states, ["walk", "idle", "heart"]);
 });
+
+test("缩放后召回仍将脚底锚点对齐到目标坐标", () => {
+  let position: [number, number] = [100, 200];
+  const motion = createPetMotion({
+    character: {
+      clickActions: ["wave"],
+      speed: 1_000,
+      visual: {
+        contentHeight: 180,
+        footAnchor: { x: 96, y: 202 },
+      },
+    },
+    initialPosition: { x: 100, y: 200 },
+    onStateChange() {},
+    scale: 0.75,
+    window: {
+      getBounds() {
+        return { x: position[0], y: position[1], width: 144, height: 156 };
+      },
+      getPosition() {
+        return position;
+      },
+      setPosition(x, y) {
+        position = [x, y];
+      },
+      workAreaAt() {
+        return { x: 0, y: 0, width: 1_920, height: 1_040 };
+      },
+    },
+  });
+
+  motion.summon({ x: 500, y: 600 });
+  motion.tick(1_000);
+
+  assert.deepEqual(position, [428, 449]);
+  const footPosition = {
+    x: position[0] + 96 * 0.75,
+    y: position[1] + 202 * 0.75,
+  };
+  assert.equal(footPosition.x, 500);
+  assert.ok(Math.abs(footPosition.y - 600) <= 0.5);
+});

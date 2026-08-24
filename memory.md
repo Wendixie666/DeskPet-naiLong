@@ -7,4 +7,5 @@
 - renderer 会识别每套动作的可见内容边界，按 `CharacterConfig.visual` 的统一视觉高度和脚底中心锚点缩放对齐；单个动作可用 `adjustment.scale/offset` 微调。
 - 设置保存在 Electron `userData/settings.json`；`SettingsManager` 集中设置规范化、运行时应用、持久化和失败恢复；角色差异通过 `CharacterRegistry` 和 `CharacterConfig` 表达，设置只保存 `characterId`。
 - Electron 主进程和 preload 保持 CommonJS；renderer 通过 `tsconfig.renderer.json` 单独编译为浏览器 ES Module，HTML 必须以 `type="module"` 加载。
+- 桌宠缩放通过一次 `BrowserWindow.setBounds()` 同步位置和尺寸，成功后才提交角色与 scale 状态，避免不可缩放窗口的几何状态不同步。
 - 完整窗口移动支持 Windows、macOS 和 Linux X11/XWayland；Electron 与 Tauri 在 Linux 原生 Wayland 都有程序化窗口定位限制。

@@ -11,6 +11,11 @@ import path from "node:path";
 import { CharacterRegistry } from "../characters";
 import { naiwa } from "../characters/naiwa";
 import { createPetMotion, type PetMotion } from "../pet/motion";
+import {
+  constrainPosition,
+  resizePetWindow,
+  scaledSize,
+} from "./pet-window";
 import type {
   AppSettings,
   CharacterConfig,
@@ -36,34 +41,11 @@ let character: CharacterConfig = registry.get(defaultSettings.characterId);
 let appliedScale = defaultSettings.petScale;
 let registeredShortcut: string | undefined;
 
-function scaledSize(config: CharacterConfig, scale: number): Size {
-  return {
-    width: Math.round(config.size.width * scale),
-    height: Math.round(config.size.height * scale),
-  };
-}
-
-function scaledFootAnchor(config: CharacterConfig, scale: number): Point {
-  return {
-    x: config.visual.footAnchor.x * scale,
-    y: config.visual.footAnchor.y * scale,
-  };
-}
-
 function bottomRightPosition(size: Size): Point {
   const { workArea } = screen.getPrimaryDisplay();
   return {
     x: workArea.x + workArea.width - size.width - 24,
     y: workArea.y + workArea.height - size.height - 24,
-  };
-}
-
-function constrainPosition(position: Point, size: Size, workArea: Electron.Rectangle): Point {
-  const maximumX = Math.max(workArea.x, workArea.x + workArea.width - size.width);
-  const maximumY = Math.max(workArea.y, workArea.y + workArea.height - size.height);
-  return {
-    x: Math.min(Math.max(Math.round(position.x), workArea.x), maximumX),
-    y: Math.min(Math.max(Math.round(position.y), workArea.y), maximumY),
   };
 }
 
@@ -173,23 +155,18 @@ function resizeAndConfigurePet(
     return;
   }
 
-  const previousBounds = petWindow.getBounds();
-  const previousAnchor = scaledFootAnchor(character, appliedScale);
-  const footPosition = {
-    x: previousBounds.x + previousAnchor.x,
-    y: previousBounds.y + previousAnchor.y,
-  };
-  const size = scaledSize(nextCharacter, scale);
-  const display = screen.getDisplayNearestPoint(footPosition);
-  const nextAnchor = scaledFootAnchor(nextCharacter, scale);
-  const position = constrainPosition({
-    x: footPosition.x - nextAnchor.x,
-    y: footPosition.y - nextAnchor.y,
-  }, size, display.workArea);
-
+  const position = resizePetWindow(
+    {
+      getBounds: () => petWindow!.getBounds(),
+      setBounds: (bounds) => petWindow!.setBounds(bounds),
+      workAreaAt: (point) => screen.getDisplayNearestPoint(point).workArea,
+    },
+    character,
+    appliedScale,
+    nextCharacter,
+    scale,
+  );
   character = nextCharacter;
-  petWindow.setSize(size.width, size.height);
-  petWindow.setPosition(position.x, position.y);
   configurePet(position, scale);
   appliedScale = scale;
 }
