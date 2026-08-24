@@ -253,7 +253,7 @@ function showSettingsWindow(): void {
   }
 
   settingsWindow = new BrowserWindow({
-    backgroundMaterial: "acrylic",
+    ...(process.platform === "win32" ? { backgroundMaterial: "acrylic" } : {}),
     backgroundColor: "#00000000",
     width: 460,
     height: 500,
@@ -392,5 +392,7 @@ app.on("will-quit", () => {
 });
 
 app.on("window-all-closed", () => {
-  app.quit();
+  if (process.platform !== "darwin") {
+    app.quit();
+  }
 });
