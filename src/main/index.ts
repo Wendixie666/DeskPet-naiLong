@@ -114,9 +114,7 @@ function createRuntime(position: Point, scale: number): void {
       getBounds: () => petWindow!.getBounds(),
       getPosition: () => petWindow!.getPosition(),
       setBounds: (bounds) => petWindow!.setBounds(bounds),
-      setPosition: (x, y) => {
-        petWindow!.setBounds({ ...petWindow!.getBounds(), x, y });
-      },
+      setPosition: (x, y) => petWindow!.setPosition(x, y),
       workAreaAt: (point) => screen.getDisplayNearestPoint(point).workArea,
     },
   });
