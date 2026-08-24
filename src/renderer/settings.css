@@ -25,18 +25,6 @@
   color-scheme: dark;
 }
 
-:root[data-theme="transparent"] {
-  --page-background: transparent;
-  --surface-background: rgb(35 35 35 / 68%);
-  --text-color: #fff;
-  --muted-color: #e0e0e0;
-  --border-color: rgb(255 255 255 / 55%);
-  --fieldset-border-color: rgb(255 255 255 / 45%);
-  --accent-color: rgb(255 255 255 / 82%);
-  --accent-text-color: #202020;
-  color-scheme: dark;
-}
-
 * {
   box-sizing: border-box;
 }
@@ -45,11 +33,6 @@ body {
   margin: 0;
   min-height: 100vh;
   background: var(--page-background);
-}
-
-:root[data-theme="transparent"] body {
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  backdrop-filter: blur(18px) saturate(140%);
 }
 
 main {

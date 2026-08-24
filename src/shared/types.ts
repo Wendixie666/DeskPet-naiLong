@@ -77,7 +77,7 @@ export interface PetSnapshot {
 }
 
 export type DefaultPosition = "bottom-right" | "last";
-export type AppTheme = "light" | "dark" | "transparent";
+export type AppTheme = "light" | "dark";
 
 export interface AppSettings {
   characterId: string;

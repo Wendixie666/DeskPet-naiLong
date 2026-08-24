@@ -114,7 +114,9 @@ function createRuntime(position: Point, scale: number): void {
       getBounds: () => petWindow!.getBounds(),
       getPosition: () => petWindow!.getPosition(),
       setBounds: (bounds) => petWindow!.setBounds(bounds),
-      setPosition: (x, y) => petWindow!.setPosition(x, y),
+      setPosition: (x, y) => {
+        petWindow!.setBounds({ ...petWindow!.getBounds(), x, y });
+      },
       workAreaAt: (point) => screen.getDisplayNearestPoint(point).workArea,
     },
   });
@@ -217,14 +219,11 @@ function showSettingsWindow(): void {
   }
 
   settingsWindow = new BrowserWindow({
-    ...(process.platform === "win32" ? { backgroundMaterial: "acrylic" } : {}),
-    backgroundColor: "#00000000",
     width: 460,
     height: 500,
     minWidth: 420,
     minHeight: 460,
     title: "桌宠设置",
-    transparent: true,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

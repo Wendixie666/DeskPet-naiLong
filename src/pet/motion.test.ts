@@ -192,6 +192,39 @@ test("缩放后召回仍将脚底锚点对齐到目标坐标", () => {
   assert.ok(Math.abs(footPosition.y - 600) <= 0.5);
 });
 
+test("召唤移动过程中窗口尺寸保持不变", () => {
+  let bounds = { x: 100, y: 200, width: 192, height: 208 };
+  const motion = createPetMotion({
+    character: {
+      clickActions: ["wave"],
+      speed: 260,
+      visual: {
+        contentHeight: 180,
+        footAnchor: { x: 96, y: 202 },
+      },
+    },
+    initialPosition: { x: 100, y: 200 },
+    onStateChange() {},
+    scale: 1,
+    window: {
+      getBounds: () => bounds,
+      getPosition: () => [bounds.x, bounds.y],
+      setPosition(x, y) {
+        bounds = { ...bounds, x, y };
+      },
+      workAreaAt: () => ({ x: 0, y: 0, width: 1_920, height: 1_040 }),
+    },
+  });
+
+  motion.summon({ x: 900, y: 700 });
+  motion.tick(500);
+  motion.tick(500);
+
+  assert.notDeepEqual({ x: bounds.x, y: bounds.y }, { x: 100, y: 200 });
+  assert.equal(bounds.width, 192);
+  assert.equal(bounds.height, 208);
+});
+
 test("转头动作会根据主进程提供的鼠标坐标更新目光方向", () => {
   let cursor = { x: 200, y: 0 };
   const motion = createPetMotion({

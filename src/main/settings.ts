@@ -61,7 +61,6 @@ function normalizeSettings(
     ? candidate.summonShortcut.trim()
     : defaultSettings.summonShortcut;
   const theme: AppTheme = candidate.theme === "dark"
-    || candidate.theme === "transparent"
     || candidate.theme === "light"
     ? candidate.theme
     : defaultSettings.theme;

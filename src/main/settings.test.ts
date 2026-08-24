@@ -125,3 +125,23 @@ test("无效设置字段回退到默认值", () => {
     rmSync(directory, { recursive: true });
   }
 });
+
+test("旧设置中的透明主题回退到浅色主题", () => {
+  const directory = mkdtempSync(path.join(tmpdir(), "deskpet-settings-"));
+  const filePath = path.join(directory, "settings.json");
+  writeFileSync(filePath, JSON.stringify({
+    ...defaultSettings,
+    theme: "transparent",
+  }));
+
+  try {
+    const manager = createSettingsManager(
+      filePath,
+      (id) => id === "naiwa",
+      () => {},
+    );
+    assert.equal(manager.get().theme, "light");
+  } finally {
+    rmSync(directory, { recursive: true });
+  }
+});
