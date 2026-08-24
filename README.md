@@ -24,6 +24,7 @@ winget install --id OpenJS.NodeJS.LTS -e
 node --version
 npm --version
 ```
+如果不可用，应该是要配置环境变量再刷新，安装完成后可以再cmd运行后续命令。
 
 `node --version` 应显示 `v22` 或更高版本。也可以从 [Node.js 官网](https://nodejs.org/en/download) 下载 Windows 安装程序。
 
