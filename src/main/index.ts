@@ -28,6 +28,10 @@ import {
   type SettingsManager,
 } from "./settings";
 
+if (process.platform === "win32") {
+  app.commandLine.appendSwitch("force-device-scale-factor", "1");
+}
+
 const registry = new CharacterRegistry([naiwa], naiwa.id);
 
 let petWindow: BrowserWindow | undefined;
@@ -114,14 +118,7 @@ function createRuntime(position: Point, scale: number): void {
       getBounds: () => petWindow!.getBounds(),
       getPosition: () => petWindow!.getPosition(),
       setBounds: (bounds) => petWindow!.setBounds(bounds),
-      setPosition: (x, y) => {
-        const before = petWindow!.getBounds();
-        petWindow!.setPosition(x, y);
-        const after = petWindow!.getBounds();
-        if (before.width !== after.width || before.height !== after.height) {
-          console.info("[DIAG-window-size]", JSON.stringify({ before, after }));
-        }
-      },
+      setPosition: (x, y) => petWindow!.setPosition(x, y),
       workAreaAt: (point) => screen.getDisplayNearestPoint(point).workArea,
     },
   });
