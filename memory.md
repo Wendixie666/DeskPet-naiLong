@@ -14,5 +14,7 @@
 - macOS 适配：启动时 `app.dock.hide()`（UIElement，避免 Dock 图标和进程类型切换闪烁），桌宠窗口在 darwin 下 `setAlwaysOnTop(true, "screen-saver")` + `setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true })` 实现跨 Space / 覆盖全屏。
 - 打包用 electron-builder（配置在 package.json `build` 字段）：产物输出 `release/`（与 TS 的 `dist/` 区分），`files` 必须包含 `dist/**`、`src/renderer/**`、`素材/奶蛙/processed/**`（排除 debug 图）；mac 目标 dmg/arm64，扩展 x64/universal 用 CLI `--x64`/`--universal` 或改 arch 数组；签名/公证走 `CSC_LINK`、`APPLE_ID`+`APPLE_APP_SPECIFIC_PASSWORD` 等环境变量，未写死。
 - 应用图标由 `tools/make_icons.py`（Pillow）从 `素材/奶蛙/default.jpeg` 生成 `build/icon.png/.ico/.icns`，脚本内含右下角水印的纵向渐变覆盖处理；素材更换后需重跑。
-- 主进程模块划分：快捷键注册在 `main/summon-shortcut`（注入 registrar 可测），桌宠窗口创建+runtime 装配+动画定时器在 `main/pet-window-create`，设置窗口在 `main/settings-window`，IPC 通道名集中在 `main/ipc`；`main/index.ts` 只剩装配与生命周期。
+- 主进程模块划分：快捷键注册在 `main/summon-shortcut`（注入 registrar 可测），桌宠窗口创建+runtime 装配在 `main/pet-window-create`（tick 定时器由 runtime 自驱，窗口关闭时 `runtime.dispose()`），设置窗口在 `main/settings-window`，`main/index.ts` 只剩装配与生命周期。
+- 脚底中心几何换算集中在纯函数模块 `pet/geometry`：召唤路径（motion）与缩放路径（pet-window）共用 `scaledFootAnchor`/`constrainPosition`，禁止再各自实现 clamp 公式。
+- IPC 通道名单一事实来源在 `shared/channels.ts`（含推送通道 pet:state / pet:snapshot-changed）；renderer 的 `global.d.ts` 用 `typeof import("../preload/index").desktopPetBridge` 引用 preload bridge 类型；`pet:summon` 通道已删除（召唤只走主进程全局快捷键）。
 - renderer 动画：帧序列纯函数 `directionFrame`/`introFrames` 从 pet-animation 闭包提升为模块导出，directional/sprite/static 三类动作共用单一 rAF 循环。
