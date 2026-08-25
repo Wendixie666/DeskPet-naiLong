@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""将蓝底逐帧素材预处理为透明、等宽的 Sprite Sheet。
+"""将横向素材预处理为透明、等宽的 Sprite Sheet。
 
-输入应是横向排列、帧之间有蓝幕间隔的素材；输出是 renderer 使用的透明
-Sprite Sheet，同时生成只用于人工检查的 debug 预览图。
+默认按透明/背景间隙检测帧边界；已知帧数且帧内容横向相连时，可用 --grid
+按 expected_frame_count 等宽切帧。输出是 renderer 使用的透明 Sprite Sheet，
+同时生成只用于人工检查的 debug 预览图。
 """
 
 from __future__ import annotations
@@ -62,8 +63,14 @@ def find_bbox(mask: list[list[bool]], left: int, right: int, height: int) -> tup
 
 
 def grid_frame_ranges(width: int, frame_count: int) -> list[tuple[int, int]]:
-    cell = width / frame_count
-    return [(round(i * cell), round((i + 1) * cell)) for i in range(frame_count)]
+    if frame_count <= 0:
+        raise ValueError(f"frame_count 必须大于 0，实际为 {frame_count}")
+    if width % frame_count != 0:
+        raise ValueError(
+            f"素材宽度 {width} 无法被帧数 {frame_count} 等分，不能生成等宽 cell"
+        )
+    cell = width // frame_count
+    return [(i * cell, (i + 1) * cell) for i in range(frame_count)]
 
 
 def preprocess(
