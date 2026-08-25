@@ -12,21 +12,13 @@
 - npm
 - Windows、macOS 或 Linux X11/XWayland
 
-Windows 如果尚未安装 Node.js，可以在 PowerShell 或命令提示符中执行：
+如果尚未安装 Node.js，可以从 [Node.js 官网](https://nodejs.org/en/download) 下载
 
+Windows 则可以在 PowerShell 或命令提示符中执行：
 ```powershell
 winget install --id OpenJS.NodeJS.LTS -e
 ```
 
-安装完成后请重新打开终端，并确认 Node.js 和 npm 已可用：
-
-```powershell
-node --version
-npm --version
-```
-如果不可用，应该是要配置环境变量再刷新，安装完成后可以再cmd运行后续命令。
-
-`node --version` 应显示 `v22` 或更高版本。也可以从 [Node.js 官网](https://nodejs.org/en/download) 下载 Windows 安装程序。
 
 ### 安装并启动
 
@@ -39,14 +31,31 @@ npm start
 
 ## 当前功能
 
-- 透明、无边框、置顶窗口，默认位于主屏工作区右下角；
-- 点击随机切换奶蛙动作；
-- 鼠标拖拽移动桌宠；
-- 通过统一的 `summon(x, y)` 入口自动行走、切换朝向，并在到达后恢复 idle；
-- 统一动作的视觉尺寸和脚底中心锚点；
-- 全局快捷键将桌宠召唤到当前鼠标所在屏幕；
-- 右键打开设置窗口，可修改角色、大小、默认位置和召唤快捷键；
-- 使用 `CharacterRegistry` 和 `CharacterConfig` 以数据驱动方式管理角色。
+- 奶蛙有不同的形态和动作，点击即可切换奶蛙动作；
+
+<p align="center">
+  <img src="image.png" width="500">
+</p>
+
+- 支持鼠标拖拽移动桌宠；
+
+- 支持使用快捷键将桌宠召唤到当前鼠标光标所在的屏幕位置；
+
+<p align="center">
+  <img src="image-1.png" width="500">
+</p>
+
+- 在转头状态下，支持简单的目光跟随光标功能；
+
+<p align="center">
+  <img src="屏幕截图 2026-08-24 180151.png" width="500">
+</p>
+
+- 右键点击桌宠可打开设置窗口，可修改角色、桌宠大小、默认位置和召唤快捷键。
+
+<p align="center">
+  <img src="image-2.png" width="500">
+</p>
 
 ## 使用方式
 
@@ -67,7 +76,7 @@ npm start
 
 ## 平台说明
 
-目标平台是 Windows、macOS 和 Linux X11/XWayland。
+目标平台是 Windows、macOS 和 Linux X11/XWayland，但是目前开发和调试都只是在win和linux上尝试过，mac可能会有bug。
 
 - Windows、macOS 和 Linux X11/XWayland 支持完整的窗口移动和召唤流程；
 - Linux 推荐使用 X11 或 XWayland。原生 Wayland 不保证程序化窗口定位、调整大小和逐帧移动；
