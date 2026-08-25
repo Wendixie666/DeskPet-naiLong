@@ -1,12 +1,13 @@
 import { contextBridge, ipcRenderer } from "electron";
 
 import type { AppSettings, SettingsSnapshot } from "../shared/types";
+import { settingsChannels } from "../shared/channels.ts";
 
 contextBridge.exposeInMainWorld("desktopSettings", {
   get(): Promise<SettingsSnapshot> {
-    return ipcRenderer.invoke("settings:get");
+    return ipcRenderer.invoke(settingsChannels.get);
   },
   update(settings: AppSettings): Promise<SettingsSnapshot> {
-    return ipcRenderer.invoke("settings:update", settings);
+    return ipcRenderer.invoke(settingsChannels.update, settings);
   },
 });

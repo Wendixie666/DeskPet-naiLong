@@ -10,6 +10,7 @@ import type {
   Size,
 } from "../shared/types";
 import { createPetRuntime, type PetRuntime } from "./pet-runtime";
+import { petChannels } from "../shared/channels.ts";
 
 export interface OpenPetWindowOptions {
   character: CharacterConfig;
@@ -61,10 +62,10 @@ export function openPetWindow(options: OpenPetWindowOptions): PetWindowHandle {
     cursorPosition: options.cursorPosition,
     tickMs: 16,
     onStateChange(state: PetState) {
-      window.webContents.send("pet:state", state);
+      window.webContents.send(petChannels.state, state);
     },
     onSnapshotChange(snapshot: PetSnapshot) {
-      window.webContents.send("pet:snapshot-changed", snapshot);
+      window.webContents.send(petChannels.snapshotChanged, snapshot);
     },
     window: {
       getBounds: () => window.getBounds(),

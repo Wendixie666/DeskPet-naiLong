@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { registerPetIpc } from "./ipc.ts";
+import { petChannels, settingsChannels } from "../shared/channels.ts";
 
 test("注册全部宠物与设置通道", () => {
   const handled: string[] = [];
@@ -27,17 +28,17 @@ test("注册全部宠物与设置通道", () => {
     },
     getSettings: () => ({ settings: {} }) as never,
     snapshot: () => ({}) as never,
-    summon() {
-      calls.push("summon");
-    },
     updateSettings: () => ({ settings: {} }) as never,
   });
 
-  assert.deepEqual(handled.sort(), ["pet:snapshot", "settings:get", "settings:update"]);
+  assert.deepEqual(handled.sort(), [
+    petChannels.snapshot,
+    settingsChannels.get,
+    settingsChannels.update,
+  ]);
   assert.deepEqual(sent.sort(), [
-    "pet:click",
-    "pet:context-menu",
-    "pet:drag-by",
-    "pet:summon",
+    petChannels.click,
+    petChannels.contextMenu,
+    petChannels.dragBy,
   ]);
 });

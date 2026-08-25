@@ -1,35 +1,35 @@
 import { contextBridge, ipcRenderer } from "electron";
 
 import type { PetSnapshot, PetState } from "../shared/types";
+import { petChannels } from "../shared/channels.ts";
 
-contextBridge.exposeInMainWorld("desktopPet", {
+export const desktopPetBridge = {
   click(): void {
-    ipcRenderer.send("pet:click");
+    ipcRenderer.send(petChannels.click);
   },
   dragBy(deltaX: number, deltaY: number): void {
-    ipcRenderer.send("pet:drag-by", deltaX, deltaY);
+    ipcRenderer.send(petChannels.dragBy, deltaX, deltaY);
   },
   getSnapshot(): Promise<PetSnapshot> {
-    return ipcRenderer.invoke("pet:snapshot");
+    return ipcRenderer.invoke(petChannels.snapshot);
   },
   onStateChange(listener: (state: PetState) => void): () => void {
     const handler = (_event: Electron.IpcRendererEvent, state: PetState) => {
       listener(state);
     };
-    ipcRenderer.on("pet:state", handler);
-    return () => ipcRenderer.removeListener("pet:state", handler);
+    ipcRenderer.on(petChannels.state, handler);
+    return () => ipcRenderer.removeListener(petChannels.state, handler);
   },
   onSnapshotChange(listener: (snapshot: PetSnapshot) => void): () => void {
     const handler = (_event: Electron.IpcRendererEvent, snapshot: PetSnapshot) => {
       listener(snapshot);
     };
-    ipcRenderer.on("pet:snapshot-changed", handler);
-    return () => ipcRenderer.removeListener("pet:snapshot-changed", handler);
+    ipcRenderer.on(petChannels.snapshotChanged, handler);
+    return () => ipcRenderer.removeListener(petChannels.snapshotChanged, handler);
   },
   openContextMenu(): void {
-    ipcRenderer.send("pet:context-menu");
+    ipcRenderer.send(petChannels.contextMenu);
   },
-  summon(x: number, y: number): void {
-    ipcRenderer.send("pet:summon", x, y);
-  },
-});
+};
+
+contextBridge.exposeInMainWorld("desktopPet", desktopPetBridge);

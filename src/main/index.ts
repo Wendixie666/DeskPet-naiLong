@@ -78,13 +78,9 @@ function settingsSnapshot(): SettingsSnapshot {
   };
 }
 
-function summon(x: number, y: number): void {
-  handle?.runtime.summon({ x, y });
-}
-
 function summonAtCursor(): void {
   const cursor = screen.getCursorScreenPoint();
-  summon(cursor.x, cursor.y);
+  handle?.runtime.summon({ x: cursor.x, y: cursor.y });
 }
 
 async function logGpuDiagnostics(): Promise<void> {
@@ -135,7 +131,6 @@ function registerIpc(): void {
     dragBy: (deltaX, deltaY) => handle?.runtime.dragBy(deltaX, deltaY),
     getSettings: settingsSnapshot,
     snapshot: currentSnapshot,
-    summon,
     updateSettings: (value) => {
       settingsManager.update(value);
       return settingsSnapshot();
