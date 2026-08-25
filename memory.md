@@ -11,3 +11,6 @@
 - `PetState.actionSequence` 用于让 renderer 识别同一动作的重新触发；召唤即使连续保持 `walk`，也必须递增该序号。
 - 完整窗口移动支持 Windows、macOS 和 Linux X11/XWayland；Electron 与 Tauri 在 Linux 原生 Wayland 都有程序化窗口定位限制。
 - 设置窗口的 acrylic 系统材质只在 Windows 启用；macOS 最后一个窗口关闭后保留应用进程，并通过 activate 重新创建桌宠窗口。
+- macOS 适配：启动时 `app.dock.hide()`（UIElement，避免 Dock 图标和进程类型切换闪烁），桌宠窗口在 darwin 下 `setAlwaysOnTop(true, "screen-saver")` + `setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true })` 实现跨 Space / 覆盖全屏。
+- 打包用 electron-builder（配置在 package.json `build` 字段）：产物输出 `release/`（与 TS 的 `dist/` 区分），`files` 必须包含 `dist/**`、`src/renderer/**`、`素材/奶蛙/processed/**`（排除 debug 图）；mac 目标 dmg/arm64，扩展 x64/universal 用 CLI `--x64`/`--universal` 或改 arch 数组；签名/公证走 `CSC_LINK`、`APPLE_ID`+`APPLE_APP_SPECIFIC_PASSWORD` 等环境变量，未写死。
+- 应用图标由 `tools/make_icons.py`（Pillow）从 `素材/奶蛙/default.jpeg` 生成 `build/icon.png/.ico/.icns`，脚本内含右下角水印的纵向渐变覆盖处理；素材更换后需重跑。

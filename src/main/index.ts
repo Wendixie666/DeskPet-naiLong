@@ -32,6 +32,10 @@ if (process.platform === "win32") {
   app.commandLine.appendSwitch("force-device-scale-factor", "1");
 }
 
+if (process.platform === "darwin") {
+  app.dock?.hide();
+}
+
 const registry = new CharacterRegistry([naiwa], naiwa.id);
 
 let petWindow: BrowserWindow | undefined;
@@ -249,6 +253,10 @@ function showPetContextMenu(): void {
       label: "设置",
       click: showSettingsWindow,
     },
+    {
+      label: "退出",
+      click: () => app.quit(),
+    },
   ]);
   menu.popup({ window: petWindow });
 }
@@ -295,6 +303,14 @@ function createPetWindow(): void {
       sandbox: true,
     },
   });
+
+  if (process.platform === "darwin") {
+    petWindow.setAlwaysOnTop(true, "screen-saver");
+    petWindow.setVisibleOnAllWorkspaces(true, {
+      visibleOnFullScreen: true,
+      skipTransformProcessType: true,
+    });
+  }
 
   createRuntime(position, settings.petScale);
   petWindow.loadFile(path.join(app.getAppPath(), "src/renderer/index.html"));

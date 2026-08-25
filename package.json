@@ -3,16 +3,54 @@
   "version": "0.1.0",
   "private": true,
   "description": "奶蛙桌宠的最小可用版本",
+  "author": "wendy",
   "main": "dist/main/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json && tsc -p tsconfig.renderer.json",
     "start": "npm run build && electron .",
     "test:render": "npm run build && electron scripts/check-render.cjs",
     "test": "node --experimental-strip-types --test src/**/*.test.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "package": "npm run build && electron-builder",
+    "package:win": "npm run build && electron-builder --win",
+    "package:mac": "npm run build && electron-builder --mac",
+    "package:linux": "npm run build && electron-builder --linux"
+  },
+  "build": {
+    "appId": "io.github.wendy.deskpet-nailong",
+    "productName": "DeskPet-naiLong",
+    "directories": {
+      "buildResources": "build",
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "src/renderer/**/*",
+      "素材/奶蛙/processed/**/*",
+      "!**/*.processed.debug.png"
+    ],
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["arm64"]
+        }
+      ],
+      "category": "public.app-category.entertainment",
+      "icon": "build/icon.icns"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "build/icon.png"
+    }
   },
   "devDependencies": {
     "electron": "^43.4.1",
+    "electron-builder": "^26.15.3",
     "typescript": "^5.8.3"
   }
 }
