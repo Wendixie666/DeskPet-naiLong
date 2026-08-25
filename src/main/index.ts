@@ -9,6 +9,7 @@ import path from "node:path";
 
 import { CharacterRegistry } from "../characters";
 import { naiwa } from "../characters/naiwa";
+import { wangwangdan } from "../characters/wangwangdan";
 import {
   constrainPosition,
   scaledSize,
@@ -36,7 +37,7 @@ if (process.platform === "darwin") {
   app.dock?.hide();
 }
 
-const registry = new CharacterRegistry([naiwa], naiwa.id);
+const registry = new CharacterRegistry([naiwa, wangwangdan], naiwa.id);
 const shortcuts = createShortcutManager(globalShortcut, summonAtCursor);
 
 let handle: PetWindowHandle | undefined;

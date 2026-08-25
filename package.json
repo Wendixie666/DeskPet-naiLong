@@ -27,6 +27,7 @@
       "dist/**/*",
       "src/renderer/**/*",
       "素材/奶蛙/processed/**/*",
+      "素材/汪汪丹/processed/**/*",
       "!**/*.processed.debug.png",
       "!**/*.test.ts"
     ],

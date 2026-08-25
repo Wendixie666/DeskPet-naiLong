@@ -17,12 +17,16 @@ def is_blue_screen(red: int, green: int, blue: int) -> bool:
     return blue > 120 and blue > red * 1.35 and blue > green * 1.35
 
 
+# 透明底素材帧间隙常残留 alpha 很低的杂散像素，低于该阈值的像素视为背景。
+ALPHA_THRESHOLD = 8
+
+
 def foreground_mask(image: Image.Image) -> list[list[bool]]:
     rgba = image.convert("RGBA")
     pixels = rgba.load()
     return [
         [
-            pixels[x, y][3] > 0
+            pixels[x, y][3] >= ALPHA_THRESHOLD
             and not is_blue_screen(pixels[x, y][0], pixels[x, y][1], pixels[x, y][2])
             for x in range(rgba.width)
         ]
