@@ -7,11 +7,69 @@ import type {
 } from "../shared/types";
 import type { DirectionalSpriteAction } from "../shared/types";
 import type { LookDirection } from "../pet/look-direction";
-import { createPetAssetLoader, type PetAssetLoader } from "./pet-assets.js";
+import { createPetAssetLoader, type PetAssetLoader } from "./pet-assets.ts";
 
 export interface PetAnimator {
   render(state: PetState): void;
   show(snapshot: PetSnapshot): void;
+}
+
+export interface DirectionalFrame {
+  assetIndex: 0 | 1;
+  frameIndex: number;
+  mirrored: boolean;
+}
+
+export function directionFrame(
+  action: DirectionalSpriteAction,
+  direction: LookDirection,
+): DirectionalFrame {
+  const lastFrame = action.frameCount - 1;
+  const frameByDirection: Record<LookDirection, DirectionalFrame> = {
+    up: { assetIndex: 0, frameIndex: 0, mirrored: false },
+    "up-near-right": { assetIndex: 0, frameIndex: 2, mirrored: false },
+    "up-right": { assetIndex: 0, frameIndex: 4, mirrored: false },
+    "right-near-up": { assetIndex: 0, frameIndex: 6, mirrored: false },
+    right: { assetIndex: 0, frameIndex: lastFrame, mirrored: false },
+    "right-near-down": { assetIndex: 1, frameIndex: 6, mirrored: false },
+    "down-right": { assetIndex: 1, frameIndex: 4, mirrored: false },
+    "down-near-right": { assetIndex: 1, frameIndex: 2, mirrored: false },
+    down: { assetIndex: 1, frameIndex: 0, mirrored: false },
+    "down-near-left": { assetIndex: 1, frameIndex: 2, mirrored: true },
+    "down-left": { assetIndex: 1, frameIndex: 4, mirrored: true },
+    "left-near-down": { assetIndex: 1, frameIndex: 6, mirrored: true },
+    left: { assetIndex: 0, frameIndex: lastFrame, mirrored: true },
+    "left-near-up": { assetIndex: 0, frameIndex: 6, mirrored: true },
+    "up-left": { assetIndex: 0, frameIndex: 4, mirrored: true },
+    "up-near-left": { assetIndex: 0, frameIndex: 2, mirrored: true },
+  };
+  return frameByDirection[direction];
+}
+
+export function introFrames(action: DirectionalSpriteAction): DirectionalFrame[] {
+  const lastFrame = action.frameCount - 1;
+  return [
+    ...Array.from({ length: action.frameCount }, (_, frameIndex) => ({
+      assetIndex: 1 as const,
+      frameIndex,
+      mirrored: false,
+    })),
+    ...Array.from({ length: action.frameCount }, (_, frameIndex) => ({
+      assetIndex: 0 as const,
+      frameIndex,
+      mirrored: false,
+    })),
+    ...Array.from({ length: action.frameCount }, (_, frameIndex) => ({
+      assetIndex: 0 as const,
+      frameIndex: lastFrame - frameIndex,
+      mirrored: true,
+    })),
+    ...Array.from({ length: action.frameCount }, (_, frameIndex) => ({
+      assetIndex: 1 as const,
+      frameIndex: lastFrame - frameIndex,
+      mirrored: true,
+    })),
+  ];
 }
 
 export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
@@ -60,30 +118,44 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
     );
   }
 
-  function directionFrame(
-    action: DirectionalSpriteAction,
-    direction: LookDirection,
-  ): { assetIndex: 0 | 1; frameIndex: number; mirrored: boolean } {
-    const lastFrame = action.frameCount - 1;
-    const frameByDirection: Record<LookDirection, { assetIndex: 0 | 1; frameIndex: number; mirrored: boolean }> = {
-      up: { assetIndex: 0, frameIndex: 0, mirrored: false },
-      "up-near-right": { assetIndex: 0, frameIndex: 2, mirrored: false },
-      "up-right": { assetIndex: 0, frameIndex: 4, mirrored: false },
-      "right-near-up": { assetIndex: 0, frameIndex: 6, mirrored: false },
-      right: { assetIndex: 0, frameIndex: lastFrame, mirrored: false },
-      "right-near-down": { assetIndex: 1, frameIndex: 6, mirrored: false },
-      "down-right": { assetIndex: 1, frameIndex: 4, mirrored: false },
-      "down-near-right": { assetIndex: 1, frameIndex: 2, mirrored: false },
-      down: { assetIndex: 1, frameIndex: 0, mirrored: false },
-      "down-near-left": { assetIndex: 1, frameIndex: 2, mirrored: true },
-      "down-left": { assetIndex: 1, frameIndex: 4, mirrored: true },
-      "left-near-down": { assetIndex: 1, frameIndex: 6, mirrored: true },
-      left: { assetIndex: 0, frameIndex: lastFrame, mirrored: true },
-      "left-near-up": { assetIndex: 0, frameIndex: 6, mirrored: true },
-      "up-left": { assetIndex: 0, frameIndex: 4, mirrored: true },
-      "up-near-left": { assetIndex: 0, frameIndex: 2, mirrored: true },
-    };
-    return frameByDirection[direction];
+  function playAction(action: CharacterAction, ownAnimationId: number): void {
+    assetLoader.load(action).then((sources) => {
+      const startedAt = performance.now();
+      const intro = action.kind === "directional-sprite"
+        ? introFrames(action)
+        : [];
+      const introDuration = intro.length * (action.kind === "directional-sprite"
+        ? action.frameDurationMs
+        : 0);
+
+      function draw(now: number): void {
+        if (animationId !== ownAnimationId) {
+          return;
+        }
+        const elapsed = now - startedAt;
+        if (action.kind === "directional-sprite") {
+          const frame = elapsed < introDuration
+            ? intro[Math.floor(elapsed / action.frameDurationMs)]
+            : directionFrame(action, renderedState?.lookDirection ?? "right");
+          drawDirectionalFrame(sources, action, frame);
+        } else if (action.kind === "sprite") {
+          drawFrame(
+            sources[0],
+            action,
+            Math.floor(elapsed / action.frameDurationMs) % action.frameCount,
+          );
+        } else {
+          drawFrame(sources[0], action, 0);
+        }
+        requestAnimationFrame(draw);
+      }
+
+      requestAnimationFrame(draw);
+    }).catch((error: unknown) => {
+      if (animationId === ownAnimationId) {
+        console.error(error);
+      }
+    });
   }
 
   function drawDirectionalFrame(
@@ -112,83 +184,6 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
       source.naturalHeight * placement.scale,
     );
     context.restore();
-  }
-
-  function introFrames(action: DirectionalSpriteAction) {
-    const lastFrame = action.frameCount - 1;
-    return [
-      ...Array.from({ length: action.frameCount }, (_, frameIndex) => ({
-        assetIndex: 1,
-        frameIndex,
-        mirrored: false,
-      })),
-      ...Array.from({ length: action.frameCount }, (_, frameIndex) => ({
-        assetIndex: 0,
-        frameIndex,
-        mirrored: false,
-      })),
-      ...Array.from({ length: action.frameCount }, (_, frameIndex) => ({
-        assetIndex: 0,
-        frameIndex: lastFrame - frameIndex,
-        mirrored: true,
-      })),
-      ...Array.from({ length: action.frameCount }, (_, frameIndex) => ({
-        assetIndex: 1,
-        frameIndex: lastFrame - frameIndex,
-        mirrored: true,
-      })),
-    ];
-  }
-
-  function playAction(action: CharacterAction, ownAnimationId: number): void {
-    assetLoader.load(action).then((sources) => {
-      if (action.kind === "directional-sprite") {
-        const directionalAction = action;
-        const frames = introFrames(directionalAction);
-        const startedAt = performance.now();
-
-        function draw(now: number): void {
-          if (animationId !== ownAnimationId) {
-            return;
-          }
-          const elapsed = now - startedAt;
-          if (elapsed < frames.length * directionalAction.frameDurationMs) {
-            const frame = frames[Math.floor(elapsed / directionalAction.frameDurationMs)];
-            drawDirectionalFrame(sources, directionalAction, frame);
-          } else {
-            const direction = renderedState?.lookDirection ?? "right";
-            drawDirectionalFrame(sources, directionalAction, directionFrame(directionalAction, direction));
-          }
-          requestAnimationFrame(draw);
-        }
-
-        requestAnimationFrame(draw);
-        return;
-      }
-      const source = sources[0];
-      const frameCount = action.kind === "sprite" ? action.frameCount : 1;
-      const startedAt = performance.now();
-
-      function draw(now: number): void {
-        if (animationId !== ownAnimationId) {
-          return;
-        }
-        let frameIndex = 0;
-        if (action.kind === "sprite") {
-          const elapsed = now - startedAt;
-          frameIndex = Math.floor(elapsed / action.frameDurationMs)
-            % action.frameCount;
-        }
-        drawFrame(source, action, frameIndex);
-        requestAnimationFrame(draw);
-      }
-
-      requestAnimationFrame(draw);
-    }).catch((error: unknown) => {
-      if (animationId === ownAnimationId) {
-        console.error(error);
-      }
-    });
   }
 
   function render(state: PetState): void {

@@ -1,6 +1,5 @@
 import {
   app,
-  BrowserWindow,
   globalShortcut,
   ipcMain,
   Menu,
@@ -14,7 +13,9 @@ import {
   constrainPosition,
   scaledSize,
 } from "./pet-window";
-import { createPetRuntime, type PetRuntime } from "./pet-runtime";
+import { openPetWindow, type PetWindowHandle } from "./pet-window-create";
+import { registerPetIpc } from "./ipc";
+import { showSettingsWindow } from "./settings-window";
 import type {
   AppSettings,
   Point,
@@ -23,10 +24,9 @@ import type {
 } from "../shared/types";
 import {
   createSettingsManager,
-  defaultSettings,
   supportedPetScales,
-  type SettingsManager,
 } from "./settings";
+import { createShortcutManager } from "./summon-shortcut";
 
 if (process.platform === "win32") {
   app.commandLine.appendSwitch("force-device-scale-factor", "1");
@@ -37,18 +37,10 @@ if (process.platform === "darwin") {
 }
 
 const registry = new CharacterRegistry([naiwa], naiwa.id);
+const shortcuts = createShortcutManager(globalShortcut, summonAtCursor);
 
-let petWindow: BrowserWindow | undefined;
-let settingsWindow: BrowserWindow | undefined;
-let runtime: PetRuntime | undefined;
-let animationTimer: NodeJS.Timeout | undefined;
-let settingsManager: SettingsManager;
-let registeredShortcut: string | undefined;
-let pendingSummonDiagnostic: {
-  cursor: Point;
-  footAnchor: Point;
-  computedTarget: Point;
-} | undefined;
+let handle: PetWindowHandle | undefined;
+let settingsManager: ReturnType<typeof createSettingsManager>;
 
 function bottomRightPosition(size: Size): Point {
   const { workArea } = screen.getPrimaryDisplay();
@@ -72,10 +64,10 @@ function initialPosition(size: Size): Point {
 }
 
 function currentSnapshot() {
-  if (!runtime) {
+  if (!handle) {
     throw new Error("桌宠尚未初始化");
   }
-  return runtime.getSnapshot();
+  return handle.runtime.getSnapshot();
 }
 
 function settingsSnapshot(): SettingsSnapshot {
@@ -86,82 +78,13 @@ function settingsSnapshot(): SettingsSnapshot {
   };
 }
 
-function createRuntime(position: Point, scale: number): void {
-  if (!petWindow) {
-    return;
-  }
-
-  runtime = createPetRuntime({
-    character: registry.get(settingsManager.get().characterId),
-    initialPosition: position,
-    scale,
-    cursorPosition: () => screen.getCursorScreenPoint(),
-    onStateChange(state) {
-      petWindow?.webContents.send("pet:state", state);
-      if (state.action === "idle" && pendingSummonDiagnostic && petWindow) {
-        const bounds = petWindow.getBounds();
-        const actualFoot = {
-          x: bounds.x + pendingSummonDiagnostic.footAnchor.x,
-          y: bounds.y + pendingSummonDiagnostic.footAnchor.y,
-        };
-        console.info("[DIAG-summon]", JSON.stringify({
-          actual_foot: actualFoot,
-          error: {
-            x: actualFoot.x - pendingSummonDiagnostic.cursor.x,
-            y: actualFoot.y - pendingSummonDiagnostic.cursor.y,
-          },
-          final_window_bounds: bounds,
-        }));
-        pendingSummonDiagnostic = undefined;
-      }
-    },
-    onSnapshotChange(snapshot) {
-      petWindow?.webContents.send("pet:snapshot-changed", snapshot);
-    },
-    window: {
-      getBounds: () => petWindow!.getBounds(),
-      getPosition: () => petWindow!.getPosition(),
-      setBounds: (bounds) => petWindow!.setBounds(bounds),
-      setPosition: (x, y) => petWindow!.setPosition(x, y),
-      workAreaAt: (point) => screen.getDisplayNearestPoint(point).workArea,
-    },
-  });
-}
-
-export function summon(x: number, y: number): void {
-  if (!petWindow || !runtime) {
-    return;
-  }
-  runtime.summon({ x, y });
+function summon(x: number, y: number): void {
+  handle?.runtime.summon({ x, y });
 }
 
 function summonAtCursor(): void {
   const cursor = screen.getCursorScreenPoint();
-  if (!petWindow || !runtime) {
-    return;
-  }
-  const snapshot = runtime.getSnapshot();
-  const bounds = petWindow.getBounds();
-  const footAnchor = {
-    x: snapshot.character.visual.footAnchor.x * runtime.getScale(),
-    y: snapshot.character.visual.footAnchor.y * runtime.getScale(),
-  };
-  const workArea = screen.getDisplayNearestPoint(cursor).workArea;
-  const computedTarget = constrainPosition({
-    x: cursor.x - footAnchor.x,
-    y: cursor.y - footAnchor.y,
-  }, bounds, workArea);
-  pendingSummonDiagnostic = { cursor, footAnchor, computedTarget };
-  console.info("[DIAG-summon]", JSON.stringify({
-    cursor,
-    footAnchor,
-    computed_target: computedTarget,
-    before_window_bounds: bounds,
-  }));
   summon(cursor.x, cursor.y);
-  console.info("[DIAG-summon]", JSON.stringify({
-    after_summon_window_bounds: petWindow.getBounds(),
-  }));
 }
 
 async function logGpuDiagnostics(): Promise<void> {
@@ -178,74 +101,18 @@ async function logGpuDiagnostics(): Promise<void> {
   }
 }
 
-function tryRegisterShortcut(shortcut: string): boolean {
-  try {
-    return globalShortcut.register(shortcut, summonAtCursor);
-  } catch {
-    return false;
-  }
-}
-
-function registerSummonShortcut(shortcut: string): boolean {
-  if (registeredShortcut === shortcut) {
-    return true;
-  }
-
-  const previousShortcut = registeredShortcut;
-  if (previousShortcut) {
-    globalShortcut.unregister(previousShortcut);
-  }
-
-  if (tryRegisterShortcut(shortcut)) {
-    registeredShortcut = shortcut;
-    return true;
-  }
-
-  registeredShortcut = undefined;
-  if (previousShortcut && tryRegisterShortcut(previousShortcut)) {
-    registeredShortcut = previousShortcut;
-  }
-  return false;
-}
-
 function applySettings(next: AppSettings): void {
-  if (!registerSummonShortcut(next.summonShortcut)) {
+  if (!shortcuts.apply(next.summonShortcut)) {
     throw new Error(`快捷键 ${next.summonShortcut} 无法注册，可能已被其他应用占用`);
   }
 
-  if (runtime) {
-    runtime.applyCharacter(registry.get(next.characterId), next.petScale);
+  if (handle) {
+    handle.runtime.applyCharacter(registry.get(next.characterId), next.petScale);
   }
-}
-
-function showSettingsWindow(): void {
-  if (settingsWindow && !settingsWindow.isDestroyed()) {
-    settingsWindow.focus();
-    return;
-  }
-
-  settingsWindow = new BrowserWindow({
-    width: 460,
-    height: 500,
-    minWidth: 420,
-    minHeight: 460,
-    title: "桌宠设置",
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: false,
-      preload: path.join(__dirname, "../preload/settings.js"),
-      sandbox: true,
-    },
-  });
-  settingsWindow.setMenuBarVisibility(false);
-  settingsWindow.loadFile(path.join(app.getAppPath(), "src/renderer/settings.html"));
-  settingsWindow.on("closed", () => {
-    settingsWindow = undefined;
-  });
 }
 
 function showPetContextMenu(): void {
-  if (!petWindow) {
+  if (!handle) {
     return;
   }
   const menu = Menu.buildFromTemplate([
@@ -258,24 +125,21 @@ function showPetContextMenu(): void {
       click: () => app.quit(),
     },
   ]);
-  menu.popup({ window: petWindow });
+  menu.popup({ window: handle.window });
 }
 
 function registerIpc(): void {
-  ipcMain.handle("pet:snapshot", currentSnapshot);
-  ipcMain.on("pet:click", () => runtime?.click());
-  ipcMain.on("pet:drag-by", (_event, deltaX: number, deltaY: number) => {
-    runtime?.dragBy(deltaX, deltaY);
-  });
-  ipcMain.on("pet:summon", (_event, targetX: number, targetY: number) => {
-    summon(targetX, targetY);
-  });
-  ipcMain.on("pet:context-menu", showPetContextMenu);
-
-  ipcMain.handle("settings:get", settingsSnapshot);
-  ipcMain.handle("settings:update", (_event, value: unknown) => {
-    settingsManager.update(value);
-    return settingsSnapshot();
+  registerPetIpc(ipcMain, {
+    click: () => handle?.runtime.click(),
+    contextMenu: showPetContextMenu,
+    dragBy: (deltaX, deltaY) => handle?.runtime.dragBy(deltaX, deltaY),
+    getSettings: settingsSnapshot,
+    snapshot: currentSnapshot,
+    summon,
+    updateSettings: (value) => {
+      settingsManager.update(value);
+      return settingsSnapshot();
+    },
   });
 }
 
@@ -283,61 +147,25 @@ function createPetWindow(): void {
   const settings = settingsManager.get();
   const character = registry.get(settings.characterId);
   const size = scaledSize(character, settings.petScale);
-  const position = initialPosition(size);
 
-  petWindow = new BrowserWindow({
-    ...size,
-    ...position,
-    alwaysOnTop: true,
-    backgroundColor: "#00000000",
-    frame: false,
-    hasShadow: false,
-    resizable: false,
-    show: false,
-    skipTaskbar: true,
-    transparent: true,
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: false,
-      preload: path.join(__dirname, "../preload/index.js"),
-      sandbox: true,
+  handle = openPetWindow({
+    character,
+    scale: settings.petScale,
+    size,
+    initialPosition: initialPosition(size),
+    cursorPosition: () => screen.getCursorScreenPoint(),
+    workAreaAt: (point) => screen.getDisplayNearestPoint(point).workArea,
+    onClosed() {
+      handle = undefined;
     },
-  });
-
-  if (process.platform === "darwin") {
-    petWindow.setAlwaysOnTop(true, "screen-saver");
-    petWindow.setVisibleOnAllWorkspaces(true, {
-      visibleOnFullScreen: true,
-      skipTransformProcessType: true,
-    });
-  }
-
-  createRuntime(position, settings.petScale);
-  petWindow.loadFile(path.join(app.getAppPath(), "src/renderer/index.html"));
-  petWindow.once("ready-to-show", () => petWindow?.show());
-
-  let previousTime = performance.now();
-  animationTimer = setInterval(() => {
-    const currentTime = performance.now();
-    runtime?.tick(currentTime - previousTime);
-    previousTime = currentTime;
-  }, 16);
-
-  petWindow.on("closed", () => {
-    if (animationTimer) {
-      clearInterval(animationTimer);
-    }
-    animationTimer = undefined;
-    runtime = undefined;
-    petWindow = undefined;
   });
 }
 
 function saveLastPosition(): void {
-  if (!petWindow || petWindow.isDestroyed()) {
+  if (!handle || handle.window.isDestroyed()) {
     return;
   }
-  const [x, y] = petWindow.getPosition();
+  const [x, y] = handle.window.getPosition();
   settingsManager.saveLastPosition({ x, y });
 }
 
@@ -348,7 +176,6 @@ app.whenReady().then(() => {
     (id) => registry.has(id),
     applySettings,
   );
-  const settings = settingsManager.get();
   registerIpc();
   createPetWindow();
 
@@ -359,7 +186,7 @@ app.whenReady().then(() => {
   }
 
   app.on("activate", () => {
-    if (!petWindow) {
+    if (!handle) {
       createPetWindow();
     }
   });
