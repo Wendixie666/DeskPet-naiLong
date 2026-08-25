@@ -59,6 +59,7 @@ export function openPetWindow(options: OpenPetWindowOptions): PetWindowHandle {
     initialPosition: options.initialPosition,
     scale: options.scale,
     cursorPosition: options.cursorPosition,
+    tickMs: 16,
     onStateChange(state: PetState) {
       window.webContents.send("pet:state", state);
     },
@@ -77,15 +78,8 @@ export function openPetWindow(options: OpenPetWindowOptions): PetWindowHandle {
   window.loadFile(path.join(app.getAppPath(), "src/renderer/index.html"));
   window.once("ready-to-show", () => window.show());
 
-  let previousTime = performance.now();
-  const animationTimer = setInterval(() => {
-    const currentTime = performance.now();
-    runtime.tick(currentTime - previousTime);
-    previousTime = currentTime;
-  }, 16);
-
   window.on("closed", () => {
-    clearInterval(animationTimer);
+    runtime.dispose();
     options.onClosed();
   });
 

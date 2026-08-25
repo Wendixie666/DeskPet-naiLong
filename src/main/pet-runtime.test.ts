@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { naiwa } from "../characters/naiwa.ts";
-import type { Bounds, PetSnapshot, Point } from "../shared/types.ts";
+import type { Bounds, PetSnapshot, PetState, Point } from "../shared/types.ts";
 import { createPetRuntime, type PetRuntimeWindow } from "./pet-runtime.ts";
 
 function createWindow(initialPosition: Point): PetRuntimeWindow & {
@@ -76,4 +76,30 @@ test("运行编排 module 切换角色或缩放时保持脚底位置并更新 sn
   assert.equal(runtimeWindow.bounds.height, Math.round(naiwa.size.height * 1.5));
   assert.equal(snapshots.length, 2);
   assert.equal(runtime.getSnapshot().character.id, "naiwa");
+});
+
+test("运行编排 module 按 tickMs 自驱推进桌宠运动并在 dispose 后停止", (t) => {
+  t.mock.timers.enable({ apis: ["setInterval"] });
+  const states: PetState[] = [];
+  const runtime = createPetRuntime({
+    character: naiwa,
+    cursorPosition: () => ({ x: 0, y: 0 }),
+    initialPosition: { x: 100, y: 200 },
+    onSnapshotChange() {},
+    onStateChange(state) {
+      states.push(state);
+    },
+    scale: 1,
+    tickMs: 16,
+    window: createWindow({ x: 100, y: 200 }),
+  });
+
+  runtime.summon({ x: 300, y: 400 });
+  t.mock.timers.tick(16);
+  const tickCount = states.length;
+  assert.ok(tickCount > 0);
+
+  runtime.dispose();
+  t.mock.timers.tick(160);
+  assert.equal(states.length, tickCount);
 });

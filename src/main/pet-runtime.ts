@@ -23,17 +23,18 @@ interface PetRuntimeOptions {
   onSnapshotChange(snapshot: PetSnapshot): void;
   onStateChange(state: PetState): void;
   scale: number;
+  tickMs?: number;
   window: PetRuntimeWindow;
 }
 
 export interface PetRuntime {
   applyCharacter(character: CharacterConfig, scale: number): void;
   click(): void;
+  dispose(): void;
   dragBy(deltaX: number, deltaY: number): void;
   getScale(): number;
   getSnapshot(): PetSnapshot;
   summon(target: Point): void;
-  tick(deltaMs: number): void;
 }
 
 export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
@@ -62,6 +63,13 @@ export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
 
   configure(options.initialPosition);
 
+  let previousTime = performance.now();
+  const animationTimer = options.tickMs === undefined ? undefined : setInterval(() => {
+    const currentTime = performance.now();
+    motion.tick(currentTime - previousTime);
+    previousTime = currentTime;
+  }, options.tickMs);
+
   return {
     applyCharacter(nextCharacter, nextScale) {
       if (nextCharacter.id === character.id && nextScale === scale) {
@@ -84,6 +92,12 @@ export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
       motion.click();
     },
 
+    dispose() {
+      if (animationTimer !== undefined) {
+        clearInterval(animationTimer);
+      }
+    },
+
     dragBy(deltaX, deltaY) {
       motion.dragBy(deltaX, deltaY);
     },
@@ -96,10 +110,6 @@ export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
 
     summon(target) {
       motion.summon(target);
-    },
-
-    tick(deltaMs) {
-      motion.tick(deltaMs);
     },
   };
 }
