@@ -6,6 +6,7 @@ export interface PetIpcHandlers {
   contextMenu(): void;
   dragBy(deltaX: number, deltaY: number): void;
   getSettings(): SettingsSnapshot;
+  quit(): void;
   snapshot(): PetSnapshot;
   updateSettings(value: unknown): SettingsSnapshot;
 }
@@ -24,4 +25,5 @@ export function registerPetIpc(ipc: IpcRegistrar, handlers: PetIpcHandlers): voi
     handlers.dragBy(deltaX, deltaY);
   });
   ipc.on(petChannels.contextMenu, () => handlers.contextMenu());
+  ipc.on(petChannels.quit, () => handlers.quit());
 }

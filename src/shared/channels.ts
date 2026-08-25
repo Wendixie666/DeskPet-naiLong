@@ -5,6 +5,7 @@ export const petChannels = {
   snapshot: "pet:snapshot",
   snapshotChanged: "pet:snapshot-changed",
   state: "pet:state",
+  quit: "pet:quit",
 } as const;
 
 export const settingsChannels = {

@@ -27,6 +27,9 @@ test("注册全部宠物与设置通道", () => {
       calls.push("dragBy");
     },
     getSettings: () => ({ settings: {} }) as never,
+    quit() {
+      calls.push("quit");
+    },
     snapshot: () => ({}) as never,
     updateSettings: () => ({ settings: {} }) as never,
   });
@@ -40,5 +43,6 @@ test("注册全部宠物与设置通道", () => {
     petChannels.click,
     petChannels.contextMenu,
     petChannels.dragBy,
+    petChannels.quit,
   ]);
 });

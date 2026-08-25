@@ -6,7 +6,7 @@
   "author": "wendy",
   "main": "dist/main/index.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json && tsc -p tsconfig.renderer.json",
+    "build": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\" && tsc -p tsconfig.json && tsc -p tsconfig.renderer.json",
     "start": "npm run build && electron .",
     "test:render": "npm run build && electron scripts/check-render.cjs",
     "test": "node --experimental-strip-types --test src/**/*.test.ts",
@@ -41,7 +41,10 @@
       "icon": "build/icon.icns"
     },
     "win": {
-      "target": "nsis",
+      "target": [
+        "nsis",
+        "portable"
+      ],
       "icon": "build/icon.ico"
     },
     "linux": {

@@ -2,6 +2,7 @@ import { createPetAnimator } from "./pet-animation.js";
 
 const petElement = document.querySelector<HTMLElement>("#pet")!;
 const canvas = document.querySelector<HTMLCanvasElement>("#pet-canvas")!;
+const closeButton = document.querySelector<HTMLButtonElement>("#app-close")!;
 const animator = createPetAnimator(canvas);
 
 interface PointerGesture {
@@ -54,6 +55,10 @@ petElement.addEventListener("pointerup", () => {
 
 petElement.addEventListener("pointercancel", () => {
   gesture = undefined;
+});
+
+closeButton.addEventListener("click", () => {
+  window.desktopPet.quit();
 });
 
 window.desktopPet.onSnapshotChange(animator.show);

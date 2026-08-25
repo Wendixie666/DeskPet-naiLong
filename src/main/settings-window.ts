@@ -19,7 +19,7 @@ export function showSettingsWindow(): void {
       contextIsolation: true,
       nodeIntegration: false,
       preload: path.join(__dirname, "../preload/settings.js"),
-      sandbox: true,
+      sandbox: false,
     },
   });
   settingsWindow.setMenuBarVisibility(false);

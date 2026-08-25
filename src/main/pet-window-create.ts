@@ -43,7 +43,7 @@ export function openPetWindow(options: OpenPetWindowOptions): PetWindowHandle {
       contextIsolation: true,
       nodeIntegration: false,
       preload: path.join(__dirname, "../preload/index.js"),
-      sandbox: true,
+      sandbox: false,
     },
   });
 

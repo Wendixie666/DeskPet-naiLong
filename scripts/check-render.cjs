@@ -56,7 +56,7 @@ app.whenReady().then(async () => {
       contextIsolation: true,
       nodeIntegration: false,
       preload: path.join(projectRoot, "dist/preload/index.js"),
-      sandbox: true,
+      sandbox: false,
     },
   });
 
@@ -105,7 +105,7 @@ app.whenReady().then(async () => {
       contextIsolation: true,
       nodeIntegration: false,
       preload: path.join(projectRoot, "dist/preload/settings.js"),
-      sandbox: true,
+      sandbox: false,
     },
   });
   settingsWindow.webContents.on("console-message", (event) => {
