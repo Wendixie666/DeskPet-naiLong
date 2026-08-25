@@ -30,9 +30,6 @@ export const desktopPetBridge = {
   openContextMenu(): void {
     ipcRenderer.send(petChannels.contextMenu);
   },
-  quit(): void {
-    ipcRenderer.send(petChannels.quit);
-  },
 };
 
 contextBridge.exposeInMainWorld("desktopPet", desktopPetBridge);

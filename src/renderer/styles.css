@@ -37,20 +37,3 @@ body,
 .facing-left {
   transform: scaleX(-1);
 }
-
-#app-close {
-  position: fixed;
-  top: 0;
-  right: 0;
-  border: none;
-  border-radius: 6px;
-  padding: 2px 8px;
-  font-size: 12px;
-  background: rgba(0, 0, 0, 0.45);
-  color: #fff;
-  cursor: pointer;
-}
-
-#app-close:hover {
-  background: rgba(0, 0, 0, 0.7);
-}

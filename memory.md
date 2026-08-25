@@ -21,4 +21,4 @@
 - Linux 上打 Windows NSIS 包需要 wine：项目内置便携版 `.wine-local/wine-10.0-amd64/`（Kron4ek 构建），打包前 `export PATH="$PWD/.wine-local/wine-10.0-amd64/bin:$PATH"` 再跑 `npm run package:win`；产物为 `release/DeskPet-naiLong Setup <版本>.exe`（nsis）和 `DeskPet-naiLong <版本>.exe`（portable 单文件）。
 - 构建关键约束：`tsc -p tsconfig.renderer.json` 会把 renderer import 到的非 renderer 文件（preload/shared/pet）按 ES2022 重新输出，曾把 dist/preload 覆盖成 ESM 导致打包版全坏。现约定：pass1（CJS）exclude src/renderer，pass2 输出到独立目录 `dist/renderer-esm/`，HTML 引用该路径；build 脚本先清空 dist 防旧产物残留。
 - Electron 沙箱 preload 只能 require 内置模块，不能 require 相对路径文件；preload import 了 shared/channels 后必须 `sandbox: false`（保留 contextIsolation），pet 窗口、settings 窗口和 scripts/check-render.cjs 三处需保持一致。
-- renderer UI 有"关闭"按钮（#app-close → pet:quit 通道 → main app.quit()），与右键菜单"退出"等效。
+- renderer UI 不放常驻按钮，保持纯透明画布；退出入口只有右键菜单"退出"（直接 `app.quit()`），曾加过 UI 关闭按钮后按要求撤除（含 pet:quit 通道整链路）。

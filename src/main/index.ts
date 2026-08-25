@@ -130,7 +130,6 @@ function registerIpc(): void {
     contextMenu: showPetContextMenu,
     dragBy: (deltaX, deltaY) => handle?.runtime.dragBy(deltaX, deltaY),
     getSettings: settingsSnapshot,
-    quit: () => app.quit(),
     snapshot: currentSnapshot,
     updateSettings: (value) => {
       settingsManager.update(value);
