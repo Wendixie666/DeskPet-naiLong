@@ -27,7 +27,8 @@
       "dist/**/*",
       "src/renderer/**/*",
       "素材/奶蛙/processed/**/*",
-      "!**/*.processed.debug.png"
+      "!**/*.processed.debug.png",
+      "!**/*.test.ts"
     ],
     "mac": {
       "target": [
