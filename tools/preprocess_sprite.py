@@ -61,18 +61,33 @@ def find_bbox(mask: list[list[bool]], left: int, right: int, height: int) -> tup
     return min(xs), min(ys), max(xs) + 1, max(ys) + 1
 
 
-def preprocess(input_path: Path, output_path: Path, expected_frame_count: int, debug_path: Path) -> None:
+def grid_frame_ranges(width: int, frame_count: int) -> list[tuple[int, int]]:
+    cell = width / frame_count
+    return [(round(i * cell), round((i + 1) * cell)) for i in range(frame_count)]
+
+
+def preprocess(
+    input_path: Path,
+    output_path: Path,
+    expected_frame_count: int,
+    debug_path: Path,
+    grid: bool = False,
+) -> None:
     image = Image.open(input_path).convert("RGBA")
     mask = foreground_mask(image)
     alpha = Image.new("L", image.size)
     alpha.putdata([255 if value else 0 for row in mask for value in row])
     image.putalpha(alpha)
-    ranges = find_frame_ranges(mask, image.width)
-    if len(ranges) != expected_frame_count:
-        raise ValueError(
-            f"{input_path}: detected_frames={len(ranges)}, "
-            f"expected_frame_count={expected_frame_count}"
-        )
+    if grid:
+        # 帧内容横向相连（如尾巴相接）时无法按间隙切分，改为均匀网格切帧。
+        ranges = grid_frame_ranges(image.width, expected_frame_count)
+    else:
+        ranges = find_frame_ranges(mask, image.width)
+        if len(ranges) != expected_frame_count:
+            raise ValueError(
+                f"{input_path}: detected_frames={len(ranges)}, "
+                f"expected_frame_count={expected_frame_count}"
+            )
 
     boxes = [find_bbox(mask, left, right, image.height) for left, right in ranges]
     canvas_width = max(right - left for left, top, right, bottom in boxes)
@@ -111,6 +126,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", type=Path, help="原始蓝底素材")
     parser.add_argument("--expected-frame-count", type=int, required=True, help="期望帧数")
+    parser.add_argument("--grid", action="store_true", help="按均匀网格切帧（帧内容横向相连时使用）")
     parser.add_argument("--output", type=Path, required=True, help="透明 Sprite Sheet 输出路径")
     parser.add_argument("--debug", type=Path, help="debug 预览路径，默认与 output 同名")
     return parser.parse_args()
@@ -119,7 +135,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     debug_path = args.debug or args.output.with_name(f"{args.output.stem}.debug.png")
-    preprocess(args.input, args.output, args.expected_frame_count, debug_path)
+    preprocess(args.input, args.output, args.expected_frame_count, debug_path, args.grid)
 
 
 if __name__ == "__main__":

@@ -22,4 +22,4 @@
 - 构建关键约束：`tsc -p tsconfig.renderer.json` 会把 renderer import 到的非 renderer 文件（preload/shared/pet）按 ES2022 重新输出，曾把 dist/preload 覆盖成 ESM 导致打包版全坏。现约定：pass1（CJS）exclude src/renderer，pass2 输出到独立目录 `dist/renderer-esm/`，HTML 引用该路径；build 脚本先清空 dist 防旧产物残留。
 - Electron 沙箱 preload 只能 require 内置模块，不能 require 相对路径文件；preload import 了 shared/channels 后必须 `sandbox: false`（保留 contextIsolation），pet 窗口、settings 窗口和 scripts/check-render.cjs 三处需保持一致。
 - renderer UI 不放常驻按钮，保持纯透明画布；退出入口只有右键菜单"退出"（直接 `app.quit()`），曾加过 UI 关闭按钮后按要求撤除（含 pet:quit 通道整链路）。
-- 第二个角色汪汪丹（`characters/wangwangdan.ts`）：素材为透明底横排帧板，`preprocess_sprite.py` 前景判定用 `ALPHA_THRESHOLD=8` 过滤帧间隙低 alpha 杂散像素（对蓝幕不透明素材无影响）；idle 是从惊讶处理图裁出的单帧静态图；召唤走 `walk`、点击循环 `["surprised","dance"]` 均复用既有行为层，未改 renderer/motion。新增角色需同步 package.json `build.files` 加素材路径。
+- 第二个角色汪汪丹（`characters/wangwangdan.ts`）：素材为透明底横排帧板，`preprocess_sprite.py` 前景判定用 `ALPHA_THRESHOLD=8` 过滤帧间隙低 alpha 杂散像素（对蓝幕不透明素材无影响）；帧内容横向相连（尾巴/爪子相接）时用 `--grid` 按均匀网格切帧。三套动作各 12 帧；idle 是旧版惊讶素材裁出的单帧静态图，素材换版后仍沿用。召唤走 `walk`、点击循环 `["surprised","dance"]` 均复用既有行为层，未改 renderer/motion。新增角色需同步 package.json `build.files` 加素材路径。

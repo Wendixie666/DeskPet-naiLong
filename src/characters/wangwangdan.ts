@@ -19,19 +19,19 @@ export const wangwangdan: CharacterConfig = {
     walk: {
       kind: "sprite",
       asset: "走路静态.processed.png",
-      frameCount: 5,
+      frameCount: 12,
       frameDurationMs: 90,
     },
     surprised: {
       kind: "sprite",
       asset: "惊讶静态.processed.png",
-      frameCount: 6,
+      frameCount: 12,
       frameDurationMs: 140,
     },
     dance: {
       kind: "sprite",
       asset: "跳舞静态.processed.png",
-      frameCount: 6,
+      frameCount: 12,
       frameDurationMs: 140,
     },
   },
