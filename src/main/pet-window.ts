@@ -1,4 +1,5 @@
 import type { CharacterConfig, Bounds, Point, Size } from "../shared/types";
+import { constrainPosition, scaledFootAnchor } from "../pet/geometry.ts";
 
 interface PetWindowGeometry {
   getBounds(): Bounds;
@@ -13,25 +14,7 @@ export function scaledSize(config: CharacterConfig, scale: number): Size {
   };
 }
 
-function scaledFootAnchor(config: CharacterConfig, scale: number): Point {
-  return {
-    x: config.visual.footAnchor.x * scale,
-    y: config.visual.footAnchor.y * scale,
-  };
-}
-
-export function constrainPosition(
-  position: Point,
-  size: Size,
-  workArea: Bounds,
-): Point {
-  const maximumX = Math.max(workArea.x, workArea.x + workArea.width - size.width);
-  const maximumY = Math.max(workArea.y, workArea.y + workArea.height - size.height);
-  return {
-    x: Math.min(Math.max(Math.round(position.x), workArea.x), maximumX),
-    y: Math.min(Math.max(Math.round(position.y), workArea.y), maximumY),
-  };
-}
+export { constrainPosition };
 
 export function resizePetWindow(
   window: PetWindowGeometry,

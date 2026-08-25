@@ -1,4 +1,5 @@
-import type { CharacterConfig, Bounds, PetState, Point } from "../shared/types";
+import type { Bounds, CharacterConfig, PetState, Point } from "../shared/types";
+import { constrainPosition, scaledFootAnchor } from "./geometry.ts";
 import { resolveLookDirection } from "./look-direction.ts";
 
 interface PetMotionWindow {
@@ -23,25 +24,6 @@ export interface PetMotion {
   getState(): PetState;
   summon(target: Point): void;
   tick(deltaMs: number): void;
-}
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(Math.max(value, minimum), maximum);
-}
-
-function summonPosition(
-  target: Point,
-  bounds: Bounds,
-  footAnchor: Point,
-  workArea: Bounds,
-): Point {
-  const maximumX = Math.max(workArea.x, workArea.x + workArea.width - bounds.width);
-  const maximumY = Math.max(workArea.y, workArea.y + workArea.height - bounds.height);
-
-  return {
-    x: clamp(Math.round(target.x - footAnchor.x), workArea.x, maximumX),
-    y: clamp(Math.round(target.y - footAnchor.y), workArea.y, maximumY),
-  };
 }
 
 export function createPetMotion(options: PetMotionOptions): PetMotion {
@@ -115,14 +97,10 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
 
     summon(targetPoint) {
       const bounds = options.window.getBounds();
-      const footAnchor = {
-        x: options.character.visual.footAnchor.x * options.scale,
-        y: options.character.visual.footAnchor.y * options.scale,
-      };
-      target = summonPosition(
-        targetPoint,
+      const footAnchor = scaledFootAnchor(options.character, options.scale);
+      target = constrainPosition(
+        { x: targetPoint.x - footAnchor.x, y: targetPoint.y - footAnchor.y },
         bounds,
-        footAnchor,
         options.window.workAreaAt(targetPoint),
       );
       state.action = "walk";
