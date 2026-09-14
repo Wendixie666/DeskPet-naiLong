@@ -131,7 +131,6 @@ python tools/preprocess_sprite.py 素材/汪汪丹/向右走路.png --expected-f
 ## 项目文档
 
 - [启动与验证指令](./启动指令.md)
-- [桌宠技术调研](./docs/research/desktop-pet-technology.md)
 - [Electron 跨平台兼容性核查](./docs/research/cross-platform-electron.md)
 - [README 结构参考](./docs/research/readme-patterns.md)
 
