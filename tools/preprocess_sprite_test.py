@@ -57,6 +57,29 @@ class PreprocessSpriteTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "detected_frames=2"):
                 MODULE.preprocess(source, root / "processed.png", 1, root / "debug.png")
 
+    def test_grid_splits_continuous_frames_into_equal_cells(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source.png"
+            output = root / "processed.png"
+            debug = root / "processed.debug.png"
+            image = Image.new("RGBA", (8, 4), (0, 0, 0, 0))
+            for x in range(8):
+                for y in range(1, 3):
+                    image.putpixel((x, y), (220 if x < 4 else 80, 80, 80, 255))
+            image.save(source)
+
+            MODULE.preprocess(source, output, 2, debug, grid=True)
+
+            with Image.open(output) as result:
+                self.assertEqual(result.size, (8, 2))
+                self.assertEqual(result.getpixel((1, 0))[:3], (220, 80, 80))
+                self.assertEqual(result.getpixel((5, 0))[:3], (80, 80, 80))
+
+    def test_grid_rejects_non_equal_cell_width(self) -> None:
+        with self.assertRaisesRegex(ValueError, "无法被帧数.*等分"):
+            MODULE.grid_frame_ranges(7, 2)
+
 
 if __name__ == "__main__":
     unittest.main()

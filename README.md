@@ -1,5 +1,7 @@
 # DeskPet-naiLong
 
+简体中文 | [English](./README.en.md)
+
 一个用 Electron、TypeScript 和原生 HTML/CSS 编写的桌面宠物。现在的主角是奶蛙：它会停留在桌面上，响应点击、拖拽和快捷键召唤。
 
 > 项目目前处于早期开发阶段。当前角色为奶蛙，后续计划支持牛来、美团袋鼠和自定义角色。
@@ -114,6 +116,12 @@ npm run build
 python -m pip install Pillow
 python tools/preprocess_sprite.py --help
 python tools/preprocess_sprite_test.py
+```
+
+帧之间没有完整空白列、但配置已知帧数的横向素材，使用 `--grid` 等宽切帧；旧素材继续省略该参数，使用 gap 检测：
+
+```bash
+python tools/preprocess_sprite.py 素材/汪汪丹/向右走路.png --expected-frame-count 12 --grid --output 素材/汪汪丹/processed/走路静态.processed.png
 ```
 
 部分 Linux/macOS 环境需要使用 `python3`；Windows 可使用 `py -m pip` 和 `py tools/preprocess_sprite.py`。

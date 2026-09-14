@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""将蓝底逐帧素材预处理为透明、等宽的 Sprite Sheet。
+"""将横向素材预处理为透明、等宽的 Sprite Sheet。
 
-输入应是横向排列、帧之间有蓝幕间隔的素材；输出是 renderer 使用的透明
-Sprite Sheet，同时生成只用于人工检查的 debug 预览图。
+默认按透明/背景间隙检测帧边界；已知帧数且帧内容横向相连时，可用 --grid
+按 expected_frame_count 等宽切帧。输出是 renderer 使用的透明 Sprite Sheet，
+同时生成只用于人工检查的 debug 预览图。
 """
 
 from __future__ import annotations
@@ -17,12 +18,16 @@ def is_blue_screen(red: int, green: int, blue: int) -> bool:
     return blue > 120 and blue > red * 1.35 and blue > green * 1.35
 
 
+# 透明底素材帧间隙常残留 alpha 很低的杂散像素，低于该阈值的像素视为背景。
+ALPHA_THRESHOLD = 8
+
+
 def foreground_mask(image: Image.Image) -> list[list[bool]]:
     rgba = image.convert("RGBA")
     pixels = rgba.load()
     return [
         [
-            pixels[x, y][3] > 0
+            pixels[x, y][3] >= ALPHA_THRESHOLD
             and not is_blue_screen(pixels[x, y][0], pixels[x, y][1], pixels[x, y][2])
             for x in range(rgba.width)
         ]
@@ -57,18 +62,39 @@ def find_bbox(mask: list[list[bool]], left: int, right: int, height: int) -> tup
     return min(xs), min(ys), max(xs) + 1, max(ys) + 1
 
 
-def preprocess(input_path: Path, output_path: Path, expected_frame_count: int, debug_path: Path) -> None:
+def grid_frame_ranges(width: int, frame_count: int) -> list[tuple[int, int]]:
+    if frame_count <= 0:
+        raise ValueError(f"frame_count 必须大于 0，实际为 {frame_count}")
+    if width % frame_count != 0:
+        raise ValueError(
+            f"素材宽度 {width} 无法被帧数 {frame_count} 等分，不能生成等宽 cell"
+        )
+    cell = width // frame_count
+    return [(i * cell, (i + 1) * cell) for i in range(frame_count)]
+
+
+def preprocess(
+    input_path: Path,
+    output_path: Path,
+    expected_frame_count: int,
+    debug_path: Path,
+    grid: bool = False,
+) -> None:
     image = Image.open(input_path).convert("RGBA")
     mask = foreground_mask(image)
     alpha = Image.new("L", image.size)
     alpha.putdata([255 if value else 0 for row in mask for value in row])
     image.putalpha(alpha)
-    ranges = find_frame_ranges(mask, image.width)
-    if len(ranges) != expected_frame_count:
-        raise ValueError(
-            f"{input_path}: detected_frames={len(ranges)}, "
-            f"expected_frame_count={expected_frame_count}"
-        )
+    if grid:
+        # 帧内容横向相连（如尾巴相接）时无法按间隙切分，改为均匀网格切帧。
+        ranges = grid_frame_ranges(image.width, expected_frame_count)
+    else:
+        ranges = find_frame_ranges(mask, image.width)
+        if len(ranges) != expected_frame_count:
+            raise ValueError(
+                f"{input_path}: detected_frames={len(ranges)}, "
+                f"expected_frame_count={expected_frame_count}"
+            )
 
     boxes = [find_bbox(mask, left, right, image.height) for left, right in ranges]
     canvas_width = max(right - left for left, top, right, bottom in boxes)
@@ -107,6 +133,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", type=Path, help="原始蓝底素材")
     parser.add_argument("--expected-frame-count", type=int, required=True, help="期望帧数")
+    parser.add_argument("--grid", action="store_true", help="按均匀网格切帧（帧内容横向相连时使用）")
     parser.add_argument("--output", type=Path, required=True, help="透明 Sprite Sheet 输出路径")
     parser.add_argument("--debug", type=Path, help="debug 预览路径，默认与 output 同名")
     return parser.parse_args()
@@ -115,7 +142,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     debug_path = args.debug or args.output.with_name(f"{args.output.stem}.debug.png")
-    preprocess(args.input, args.output, args.expected_frame_count, debug_path)
+    preprocess(args.input, args.output, args.expected_frame_count, debug_path, args.grid)
 
 
 if __name__ == "__main__":
