@@ -34,7 +34,7 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["arm64"]
+          "arch": ["universal"]
         }
       ],
       "category": "public.app-category.entertainment",
