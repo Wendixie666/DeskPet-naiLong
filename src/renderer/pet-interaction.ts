@@ -1,5 +1,12 @@
 import type { CharacterVisual, Point } from "../shared/types";
 
+export function isActivePointer(
+  gesture: { pointerId: number } | undefined,
+  pointerId: number,
+): boolean {
+  return gesture?.pointerId === pointerId;
+}
+
 export function isInHeadInteraction(
   point: Point,
   visual: CharacterVisual,

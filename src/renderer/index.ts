@@ -1,5 +1,5 @@
 import { createPetAnimator } from "./pet-animation.js";
-import { isInHeadInteraction } from "./pet-interaction.js";
+import { isActivePointer, isInHeadInteraction } from "./pet-interaction.js";
 import type { CharacterVisual, PetSnapshot } from "../shared/types";
 
 const petElement = document.querySelector<HTMLElement>("#pet")!;
@@ -11,6 +11,7 @@ interface PointerGesture {
   lastX: number;
   lastY: number;
   moved: number;
+  pointerId: number;
 }
 
 let gesture: PointerGesture | undefined;
@@ -29,13 +30,29 @@ function showSnapshot(snapshot: PetSnapshot): void {
   animator.show(snapshot);
 }
 
+function cancelGesture(pointerId?: number): void {
+  if (!gesture) {
+    return;
+  }
+  if (pointerId !== undefined && !isActivePointer(gesture, pointerId)) {
+    return;
+  }
+  if (gesture.isHead) {
+    window.desktopPet.endPat();
+  }
+  if (gesture.moved >= 4) {
+    window.desktopPet.endDrag();
+  }
+  gesture = undefined;
+}
+
 petElement.addEventListener("contextmenu", (event) => {
   event.preventDefault();
   window.desktopPet.openContextMenu();
 });
 
 petElement.addEventListener("pointerdown", (event) => {
-  if (event.button !== 0) {
+  if (event.button !== 0 || gesture) {
     return;
   }
   petElement.setPointerCapture(event.pointerId);
@@ -46,6 +63,7 @@ petElement.addEventListener("pointerdown", (event) => {
     lastX: event.screenX,
     lastY: event.screenY,
     moved: 0,
+    pointerId: event.pointerId,
   };
   if (gesture.isHead) {
     window.desktopPet.startPat();
@@ -53,7 +71,7 @@ petElement.addEventListener("pointerdown", (event) => {
 });
 
 petElement.addEventListener("pointermove", (event) => {
-  if (!gesture) {
+  if (!gesture || !isActivePointer(gesture, event.pointerId)) {
     return;
   }
 
@@ -72,27 +90,32 @@ petElement.addEventListener("pointermove", (event) => {
   }
 });
 
-petElement.addEventListener("pointerup", () => {
-  if (gesture && gesture.moved < 4) {
+petElement.addEventListener("pointerup", (event) => {
+  if (!gesture || !isActivePointer(gesture, event.pointerId)) {
+    return;
+  }
+  if (gesture.moved < 4) {
     if (gesture.isHead) {
       window.desktopPet.endPat();
     } else {
       window.desktopPet.click();
     }
-  } else if (gesture) {
+  } else {
     window.desktopPet.endDrag();
   }
   gesture = undefined;
 });
 
-petElement.addEventListener("pointercancel", () => {
-  if (gesture?.isHead) {
-    window.desktopPet.endPat();
-  }
-  if (gesture && gesture.moved >= 4) {
-    window.desktopPet.endDrag();
-  }
-  gesture = undefined;
+petElement.addEventListener("pointercancel", (event) => {
+  cancelGesture(event.pointerId);
+});
+
+petElement.addEventListener("lostpointercapture", (event) => {
+  cancelGesture(event.pointerId);
+});
+
+window.addEventListener("blur", () => {
+  cancelGesture();
 });
 
 window.desktopPet.onSnapshotChange(showSnapshot);

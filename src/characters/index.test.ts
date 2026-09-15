@@ -49,3 +49,13 @@ test("CharacterRegistry 校验交互动作配置", () => {
     /交互动作 pat/,
   );
 });
+
+test("CharacterRegistry 拒绝没有摸头动作的头部命中区域", () => {
+  assert.throws(
+    () => new CharacterRegistry([{
+      ...naiwa,
+      interactionActions: undefined,
+    }], naiwa.id),
+    /头部命中区域.*摸头动作/,
+  );
+});
