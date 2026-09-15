@@ -1,5 +1,6 @@
 import {
   DEFAULT_TODO_DATE_DEADLINE_TIME,
+  type AppTheme,
   type TodoDeadlinePrecision,
   type TodoItem,
 } from "../shared/types.js";
@@ -12,6 +13,10 @@ const statusElement = document.querySelector<HTMLElement>("#status")!;
 let todos: TodoItem[] = [];
 let editingDeadlineId: string | undefined;
 let focusTodoId: string | undefined;
+
+function applyTheme(theme: AppTheme): void {
+  document.documentElement.dataset.theme = theme;
+}
 
 function showError(error: unknown): void {
   statusElement.classList.add("error");
@@ -245,3 +250,6 @@ listElement.addEventListener("keydown", (event) => {
 });
 
 reload().catch(showError);
+
+window.desktopMemo.onThemeChanged(applyTheme);
+window.desktopMemo.getTheme().then(applyTheme).catch(showError);

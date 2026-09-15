@@ -12,6 +12,7 @@ export const petChannels = {
 
 export const settingsChannels = {
   get: "settings:get",
+  themeChanged: "settings:theme-changed",
   update: "settings:update",
 } as const;
 

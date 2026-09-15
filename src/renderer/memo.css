@@ -7,10 +7,24 @@
   --accent-color: #f29b72;
   --accent-soft: #fff0e8;
   --danger-color: #b86767;
+  --accent-text-color: #fff;
   color: var(--text-color);
   background: var(--page-background);
   color-scheme: light;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+:root[data-theme="dark"] {
+  --page-background: #181818;
+  --surface-background: #292929;
+  --text-color: #f4f4f4;
+  --muted-color: #b8b8b8;
+  --border-color: #666;
+  --accent-color: #d6d6d6;
+  --accent-soft: #383838;
+  --danger-color: #e28d8d;
+  --accent-text-color: #181818;
+  color-scheme: dark;
 }
 
 * {
@@ -36,12 +50,6 @@ header {
   gap: 20px;
 }
 
-.eyebrow {
-  margin: 0 0 4px;
-  color: var(--muted-color);
-  font-size: 13px;
-}
-
 h1 {
   margin: 0;
   font-size: 28px;
@@ -63,12 +71,11 @@ button {
 .primary-button {
   padding: 7px 13px;
   border-color: var(--accent-color);
-  color: #fff;
+  color: var(--accent-text-color);
   background: var(--accent-color);
   white-space: nowrap;
 }
 
-.hint,
 .status {
   margin: 10px 0 0;
   color: var(--muted-color);

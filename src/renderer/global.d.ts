@@ -1,4 +1,5 @@
 import type {
+  AppTheme,
   AppSettings,
   SettingsSnapshot,
   TodoDeadlinePrecision,
@@ -13,6 +14,8 @@ declare global {
       update(settings: AppSettings): Promise<SettingsSnapshot>;
     };
     desktopMemo: {
+      getTheme(): Promise<AppTheme>;
+      onThemeChanged(listener: (theme: AppTheme) => void): () => void;
       list(): Promise<TodoItem[]>;
       create(text: string): Promise<TodoItem>;
       updateText(id: string, text: string): Promise<TodoItem>;

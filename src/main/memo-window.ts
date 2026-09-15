@@ -1,6 +1,9 @@
 import { app, BrowserWindow } from "electron";
 import path from "node:path";
 
+import type { AppTheme } from "../shared/types";
+import { settingsChannels } from "../shared/channels.ts";
+
 let memoWindow: BrowserWindow | undefined;
 
 export function showMemoWindow(): void {
@@ -27,4 +30,11 @@ export function showMemoWindow(): void {
   memoWindow.on("closed", () => {
     memoWindow = undefined;
   });
+}
+
+export function notifyMemoTheme(theme: AppTheme): void {
+  if (!memoWindow || memoWindow.isDestroyed()) {
+    return;
+  }
+  memoWindow.webContents.send(settingsChannels.themeChanged, theme);
 }

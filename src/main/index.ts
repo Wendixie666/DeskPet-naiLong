@@ -17,7 +17,7 @@ import {
 import { openPetWindow, type PetWindowHandle } from "./pet-window-create";
 import { registerPetIpc } from "./ipc";
 import { showSettingsWindow } from "./settings-window";
-import { showMemoWindow } from "./memo-window";
+import { notifyMemoTheme, showMemoWindow } from "./memo-window";
 import { registerMemoIpc, createMemoIpcHandlers } from "./memo-ipc";
 import { createTodoStore, type TodoStore } from "./todo-store";
 import { createReminderScheduler, type ReminderScheduler } from "./reminder-scheduler";
@@ -158,7 +158,9 @@ function registerIpc(): void {
     startPat: () => handle?.runtime.startPat(),
     updateSettings: (value) => {
       settingsManager.update(value);
-      return settingsSnapshot();
+      const snapshot = settingsSnapshot();
+      notifyMemoTheme(snapshot.settings.theme);
+      return snapshot;
     },
   });
   registerMemoIpc(ipcMain, createMemoIpcHandlers(todoStore));
