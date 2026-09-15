@@ -2,9 +2,9 @@
 
 简体中文 | [English](./README.en.md)
 
-一个用 Electron、TypeScript 和原生 HTML/CSS 编写的桌面宠物。现在的主角是奶蛙：它会停留在桌面上，响应点击、拖拽和快捷键召唤。
+一个用 Electron、TypeScript 和原生 HTML/CSS 编写的桌面宠物奶蛙程序。
 
-> 项目目前处于早期开发阶段。当前角色为奶蛙，后续计划支持牛来、美团袋鼠和自定义角色。
+> 项目目前处于早期开发阶段。后续考虑增加一些更复杂或者抽象的功能。
 
 ## 快速开始
 
@@ -100,33 +100,6 @@ npm test
 npm run typecheck
 npm run build
 ```
-
-只有修改 `素材/奶蛙` 下的原始蓝幕图片并重新生成透明 Sprite Sheet 时，才需要 Python 3 和 Pillow。
-
-素材目录约定如下：
-
-- `素材/奶蛙/*.png`：原始蓝幕素材，只作为预处理输入，不被 renderer 直接读取；
-- `素材/奶蛙/processed/*.processed.png`：运行时读取的透明 Sprite Sheet；
-- `素材/奶蛙/processed/*.processed.debug.png`：带帧边界和锚点辅助线的预览图，不被 renderer 读取；
-- `素材/奶蛙/processed/all-states.gif`：当前 idle 动作直接使用的成品 GIF。
-
-修改原始素材后，需要重新生成对应的 processed 文件，并确认帧数与角色配置中的 `frameCount` 一致：
-
-```bash
-python -m pip install Pillow
-python tools/preprocess_sprite.py --help
-python tools/preprocess_sprite_test.py
-```
-
-部分 Linux/macOS 环境需要使用 `python3`；Windows 可使用 `py -m pip` 和 `py tools/preprocess_sprite.py`。
-
-预处理脚本只在素材发生变化时运行；桌宠启动时不会调用该脚本，也不会从原始蓝幕图片重新生成角色素材。
-
-## 项目文档
-
-- [启动与验证指令](./启动指令.md)
-- [Electron 跨平台兼容性核查](./docs/research/cross-platform-electron.md)
-- [README 结构参考](./docs/research/readme-patterns.md)
 
 ## 技术栈
 
