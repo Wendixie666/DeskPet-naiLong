@@ -46,6 +46,7 @@ app.whenReady().then(async () => {
     petScales: [0.75, 1, 1.25, 1.5],
     settings: next,
   }));
+  ipcMain.handle("memo:list", () => []);
 
   const window = new BrowserWindow({
     ...naiwa.size,
@@ -120,11 +121,35 @@ app.whenReady().then(async () => {
     shortcut: document.querySelector("#summon-shortcut").value,
   }))()`);
 
+  const memoWindow = new BrowserWindow({
+    width: 560,
+    height: 640,
+    show: false,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      preload: path.join(projectRoot, "dist/preload/memo.js"),
+      sandbox: false,
+    },
+  });
+  memoWindow.webContents.on("console-message", (event) => {
+    if (event.level === "error") {
+      rendererErrors.push(event.message);
+    }
+  });
+  await memoWindow.loadFile(path.join(projectRoot, "src/renderer/memo.html"));
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  const memoState = await memoWindow.webContents.executeJavaScript(`(() => ({
+    title: document.querySelector("h1").textContent,
+    newTodoButton: document.querySelector("#new-todo").textContent,
+  }))()`);
+
   const result = {
     canvasState,
     facingLeft,
     rendererErrors,
     settingsState,
+    memoState,
     visiblePixels,
     walkVisiblePixels,
   };
@@ -136,6 +161,7 @@ app.whenReady().then(async () => {
     || canvasState.height !== naiwa.size.height
     || settingsState.characterOptions !== 1
     || settingsState.shortcut !== settings.summonShortcut
+    || memoState.title !== "备忘录"
     || visiblePixels < 1_000
     || !facingLeft
     || walkVisiblePixels < 1_000

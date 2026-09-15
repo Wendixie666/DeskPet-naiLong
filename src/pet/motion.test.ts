@@ -52,40 +52,38 @@ test("键盘活动进入 typing，连续活动不重播，超时后恢复 idle",
   assert.deepEqual(states.map((state) => state.action), ["typing", "idle"]);
 });
 
-test("键盘活动不会打断拖拽、摸头、攀爬和召唤行走", () => {
-  const motion = createKeyboardTestMotion(() => {});
+test("键盘活动会打断拖拽、摸头、攀爬和召唤行走", () => {
+  const startActions: Array<(motion: ReturnType<typeof createKeyboardTestMotion>) => void> = [
+    (motion) => motion.dragBy(1, 0),
+    (motion) => motion.startPat(),
+    (motion) => {
+      motion.dragBy(-100, 0);
+      motion.endDrag();
+    },
+    (motion) => motion.summon({ x: 500, y: 600 }),
+  ];
 
-  motion.dragBy(1, 0);
-  motion.keyboardActivity();
-  assert.equal(motion.getState().action, "drag");
-  motion.endDrag();
-  assert.equal(motion.getState().action, "typing");
+  for (const startAction of startActions) {
+    const motion = createKeyboardTestMotion(() => {});
+    startAction(motion);
+    assert.notEqual(motion.getState().action, "idle");
 
-  motion.startPat();
-  motion.keyboardActivity();
-  assert.equal(motion.getState().action, "pat");
-  motion.endPat();
-  assert.equal(motion.getState().action, "typing");
-
-  motion.dragBy(-100, 0);
-  motion.endDrag();
-  motion.keyboardActivity();
-  assert.equal(motion.getState().action, "climb");
-
-  motion.summon({ x: 500, y: 600 });
-  motion.keyboardActivity();
-  assert.equal(motion.getState().action, "walk");
+    motion.keyboardActivity();
+    assert.equal(motion.getState().action, "typing");
+    motion.tick(KEYBOARD_INACTIVITY_TIMEOUT_MS);
+    assert.equal(motion.getState().action, "idle");
+  }
 });
 
-test("高优先级动作结束时仍在活动窗口内会进入 typing", () => {
+test("typing 结束后回到 idle，不恢复被打断的动作", () => {
   const motion = createKeyboardTestMotion(() => {});
 
-  motion.summon({ x: 500, y: 600 });
-  motion.tick(3_500);
+  motion.click();
   motion.keyboardActivity();
-  motion.tick(200);
-
   assert.equal(motion.getState().action, "typing");
+  motion.tick(KEYBOARD_INACTIVITY_TIMEOUT_MS);
+
+  assert.equal(motion.getState().action, "idle");
 });
 
 test("召唤以脚底中心为目标并推进桌宠窗口", () => {

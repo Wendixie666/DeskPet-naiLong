@@ -3,6 +3,7 @@ import {
   globalShortcut,
   ipcMain,
   Menu,
+  Notification,
   screen,
 } from "electron";
 import path from "node:path";
@@ -16,6 +17,10 @@ import {
 import { openPetWindow, type PetWindowHandle } from "./pet-window-create";
 import { registerPetIpc } from "./ipc";
 import { showSettingsWindow } from "./settings-window";
+import { showMemoWindow } from "./memo-window";
+import { registerMemoIpc, createMemoIpcHandlers } from "./memo-ipc";
+import { createTodoStore, type TodoStore } from "./todo-store";
+import { createReminderScheduler, type ReminderScheduler } from "./reminder-scheduler";
 import type {
   AppSettings,
   Point,
@@ -47,6 +52,8 @@ const shortcuts = createShortcutManager(globalShortcut, summonAtCursor);
 let handle: PetWindowHandle | undefined;
 let settingsManager: ReturnType<typeof createSettingsManager>;
 let keyboardActivityService: KeyboardActivityService | undefined;
+let todoStore: TodoStore;
+let reminderScheduler: ReminderScheduler;
 
 function bottomRightPosition(size: Size): Point {
   const { workArea } = screen.getPrimaryDisplay();
@@ -119,6 +126,15 @@ function showPetContextMenu(): void {
   }
   const menu = Menu.buildFromTemplate([
     {
+      label: "工具箱",
+      submenu: [
+        {
+          label: "备忘录",
+          click: showMemoWindow,
+        },
+      ],
+    },
+    {
       label: "设置",
       click: showSettingsWindow,
     },
@@ -145,6 +161,7 @@ function registerIpc(): void {
       return settingsSnapshot();
     },
   });
+  registerMemoIpc(ipcMain, createMemoIpcHandlers(todoStore));
 }
 
 function createPetWindow(): void {
@@ -198,7 +215,20 @@ app.whenReady().then(() => {
     (id) => registry.has(id),
     applySettings,
   );
+  todoStore = createTodoStore(path.join(app.getPath("userData"), "todos.json"));
+  reminderScheduler = createReminderScheduler({
+    store: todoStore,
+    onReminder(todo) {
+      if (Notification.isSupported()) {
+        new Notification({
+          title: "奶蛙提醒你",
+          body: todo.text,
+        }).show();
+      }
+    },
+  });
   registerIpc();
+  reminderScheduler.start();
   createPetWindow();
   startKeyboardActivity();
 
@@ -218,6 +248,7 @@ app.whenReady().then(() => {
 app.on("before-quit", saveLastPosition);
 
 app.on("will-quit", () => {
+  reminderScheduler?.stop();
   keyboardActivityService?.stop();
   globalShortcut.unregisterAll();
 });

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>奶蛙备忘录</title>
+    <link rel="stylesheet" href="./memo.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <p class="eyebrow">奶蛙的工具箱</p>
+          <h1>备忘录</h1>
+        </div>
+        <button id="new-todo" class="primary-button" type="button">＋ 新建任务</button>
+      </header>
+      <p class="hint">只选日期时，将按当天 23:59 提醒。</p>
+      <p id="status" class="status" role="status"></p>
+      <section id="todo-list" aria-live="polite"></section>
+      <p id="empty-state" class="empty-state">还没有待办，先记下一件小事吧。</p>
+    </main>
+    <script type="module" src="../../dist/renderer-esm/renderer/memo.js"></script>
+  </body>
+</html>

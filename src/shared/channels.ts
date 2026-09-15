@@ -14,3 +14,12 @@ export const settingsChannels = {
   get: "settings:get",
   update: "settings:update",
 } as const;
+
+export const memoChannels = {
+  list: "memo:list",
+  create: "memo:create",
+  updateText: "memo:update-text",
+  updateDeadline: "memo:update-deadline",
+  complete: "memo:complete",
+  remove: "memo:remove",
+} as const;

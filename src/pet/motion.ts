@@ -192,9 +192,7 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
 
     keyboardActivity() {
       typingActivityRemainingMs = KEYBOARD_INACTIVITY_TIMEOUT_MS;
-      if (state.action !== "idle" && state.action !== "typing") {
-        return;
-      }
+      stopMovement();
       if (state.action === "typing") {
         return;
       }

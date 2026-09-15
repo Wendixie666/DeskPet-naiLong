@@ -106,3 +106,18 @@ export interface SettingsSnapshot {
   petScales: number[];
   settings: AppSettings;
 }
+
+export type TodoDeadlinePrecision = "date" | "date-time";
+
+export const DEFAULT_TODO_DATE_DEADLINE_TIME = "23:59";
+
+export interface TodoItem {
+  id: string;
+  text: string;
+  completed: boolean;
+  deadline?: string;
+  deadlinePrecision?: TodoDeadlinePrecision;
+  reminderTriggeredAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}

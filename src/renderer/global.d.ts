@@ -1,4 +1,9 @@
-import type { AppSettings, SettingsSnapshot } from "../shared/types";
+import type {
+  AppSettings,
+  SettingsSnapshot,
+  TodoDeadlinePrecision,
+  TodoItem,
+} from "../shared/types";
 
 declare global {
   interface Window {
@@ -6,6 +11,18 @@ declare global {
     desktopSettings: {
       get(): Promise<SettingsSnapshot>;
       update(settings: AppSettings): Promise<SettingsSnapshot>;
+    };
+    desktopMemo: {
+      list(): Promise<TodoItem[]>;
+      create(text: string): Promise<TodoItem>;
+      updateText(id: string, text: string): Promise<TodoItem>;
+      updateDeadline(
+        id: string,
+        deadline?: string,
+        deadlinePrecision?: TodoDeadlinePrecision,
+      ): Promise<TodoItem>;
+      complete(id: string): Promise<TodoItem>;
+      remove(id: string): Promise<void>;
     };
   }
 }
