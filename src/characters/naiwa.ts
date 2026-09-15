@@ -75,5 +75,11 @@ export const naiwa: CharacterConfig = {
       frameCount: 12,
       frameDurationMs: 120,
     },
+    typing: {
+      kind: "sprite",
+      asset: "打字静态.processed.png",
+      frameCount: 6,
+      frameDurationMs: 120,
+    },
   },
 };

@@ -36,6 +36,7 @@ export interface PetRuntime {
   endPat(): void;
   getScale(): number;
   getSnapshot(): PetSnapshot;
+  keyboardActivity(): void;
   summon(target: Point): void;
   startPat(): void;
 }
@@ -118,6 +119,10 @@ export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
     },
 
     getSnapshot: snapshot,
+
+    keyboardActivity() {
+      motion.keyboardActivity();
+    },
 
     summon(target) {
       motion.summon(target);

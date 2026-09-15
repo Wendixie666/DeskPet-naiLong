@@ -64,6 +64,15 @@ test("运行编排 module 初始化并转发桌宠输入", () => {
   assert.equal(snapshots.length, 1);
 });
 
+test("运行编排 module 转发键盘活动到桌宠运动", () => {
+  const snapshots: PetSnapshot[] = [];
+  const runtime = createRuntime(createWindow({ x: 100, y: 200 }), snapshots);
+
+  runtime.keyboardActivity();
+
+  assert.equal(runtime.getSnapshot().state.action, "typing");
+});
+
 test("运行编排 module 切换角色或缩放时保持脚底位置并更新 snapshot", () => {
   const snapshots: PetSnapshot[] = [];
   const runtimeWindow = createWindow({ x: 100, y: 200 });

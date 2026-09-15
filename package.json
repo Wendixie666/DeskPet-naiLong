@@ -30,6 +30,8 @@
       "!**/*.processed.debug.png",
       "!**/*.test.ts"
     ],
+    "npmRebuild": false,
+    "asarUnpack": ["**/*.node"],
     "mac": {
       "target": [
         {
@@ -56,5 +58,8 @@
     "electron": "^43.4.1",
     "electron-builder": "^26.15.3",
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "uiohook-napi": "1.5.5"
   }
 }

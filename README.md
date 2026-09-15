@@ -41,6 +41,8 @@ npm start
 
 - 支持鼠标拖拽移动桌宠；
 
+- 当用户在其他应用中敲键盘时，奶蛙会陪着打字；停止键盘活动约 1.5 秒后恢复 idle；
+
 - 支持使用快捷键将桌宠召唤到当前鼠标光标所在的屏幕位置；
 
 <p align="center">
@@ -81,6 +83,8 @@ npm start
 目标平台是 Windows、macOS 和 Linux X11/XWayland，但是目前开发和调试都只是在win和linux上尝试过，mac可能会有bug。
 
 - Windows、macOS 和 Linux X11/XWayland 支持完整的窗口移动和召唤流程；
+- 全局键盘活动监听使用 `uiohook-napi`。macOS 首次使用时请在“系统设置 > 隐私与安全性 > 输入监控”（如系统列在“辅助功能”，也请允许）中允许本应用；应用只使用按键活动信号，不记录具体按键；
+- Linux 原生 Wayland 不保证全局键盘活动监听，请使用 X11 或 XWayland；
 - Linux 推荐使用 X11 或 XWayland。原生 Wayland 不保证程序化窗口定位、调整大小和逐帧移动；
 - Debian/Ubuntu 如果启动时提示缺少系统库，可以安装：
 

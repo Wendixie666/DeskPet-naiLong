@@ -1,7 +1,92 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { createPetMotion } from "./motion.ts";
+import {
+  createPetMotion,
+  KEYBOARD_INACTIVITY_TIMEOUT_MS,
+} from "./motion.ts";
+
+function createKeyboardTestMotion(
+  onStateChange: (state: { action: string; actionSequence: number }) => void,
+) {
+  let position: [number, number] = [100, 200];
+  return createPetMotion({
+    character: {
+      clickActions: ["wave"],
+      interactionActions: { climb: "climb", drag: "drag", pat: "pat" },
+      speed: 100,
+      visual: {
+        contentHeight: 180,
+        footAnchor: { x: 96, y: 202 },
+      },
+    },
+    initialPosition: { x: 100, y: 200 },
+    onStateChange,
+    scale: 1,
+    window: {
+      getBounds: () => ({ x: position[0], y: position[1], width: 192, height: 208 }),
+      getPosition: () => position,
+      setPosition(x, y) {
+        position = [x, y];
+      },
+      workAreaAt: () => ({ x: 0, y: 0, width: 1_920, height: 1_040 }),
+    },
+  });
+}
+
+test("键盘活动进入 typing，连续活动不重播，超时后恢复 idle", () => {
+  const states: Array<{ action: string; actionSequence: number }> = [];
+  const motion = createKeyboardTestMotion((state) => {
+    states.push({ action: state.action, actionSequence: state.actionSequence });
+  });
+
+  motion.keyboardActivity();
+  const sequence = motion.getState().actionSequence;
+  motion.keyboardActivity();
+  motion.tick(KEYBOARD_INACTIVITY_TIMEOUT_MS - 1);
+  assert.equal(motion.getState().action, "typing");
+  motion.tick(1);
+
+  assert.equal(motion.getState().action, "idle");
+  assert.equal(motion.getState().actionSequence, sequence + 1);
+  assert.deepEqual(states.map((state) => state.action), ["typing", "idle"]);
+});
+
+test("键盘活动不会打断拖拽、摸头、攀爬和召唤行走", () => {
+  const motion = createKeyboardTestMotion(() => {});
+
+  motion.dragBy(1, 0);
+  motion.keyboardActivity();
+  assert.equal(motion.getState().action, "drag");
+  motion.endDrag();
+  assert.equal(motion.getState().action, "typing");
+
+  motion.startPat();
+  motion.keyboardActivity();
+  assert.equal(motion.getState().action, "pat");
+  motion.endPat();
+  assert.equal(motion.getState().action, "typing");
+
+  motion.dragBy(-100, 0);
+  motion.endDrag();
+  motion.keyboardActivity();
+  assert.equal(motion.getState().action, "climb");
+
+  motion.summon({ x: 500, y: 600 });
+  motion.keyboardActivity();
+  assert.equal(motion.getState().action, "walk");
+});
+
+test("高优先级动作结束时仍在活动窗口内会进入 typing", () => {
+  const motion = createKeyboardTestMotion(() => {});
+
+  motion.summon({ x: 500, y: 600 });
+  motion.tick(3_500);
+  motion.keyboardActivity();
+  motion.tick(200);
+
+  assert.equal(motion.getState().action, "typing");
+});
 
 test("召唤以脚底中心为目标并推进桌宠窗口", () => {
   let position: [number, number] = [100, 200];

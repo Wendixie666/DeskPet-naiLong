@@ -27,6 +27,11 @@ import {
   supportedPetScales,
 } from "./settings";
 import { createShortcutManager } from "./summon-shortcut";
+import {
+  createKeyboardActivityService,
+  createUiohookKeyboardActivityHook,
+  type KeyboardActivityService,
+} from "./keyboard-activity";
 
 if (process.platform === "win32") {
   app.commandLine.appendSwitch("force-device-scale-factor", "1");
@@ -41,6 +46,7 @@ const shortcuts = createShortcutManager(globalShortcut, summonAtCursor);
 
 let handle: PetWindowHandle | undefined;
 let settingsManager: ReturnType<typeof createSettingsManager>;
+let keyboardActivityService: KeyboardActivityService | undefined;
 
 function bottomRightPosition(size: Size): Point {
   const { workArea } = screen.getPrimaryDisplay();
@@ -159,6 +165,24 @@ function createPetWindow(): void {
   });
 }
 
+function startKeyboardActivity(): void {
+  try {
+    keyboardActivityService = createKeyboardActivityService(
+      createUiohookKeyboardActivityHook(),
+      () => handle?.runtime.keyboardActivity(),
+      (message) => {
+        const permissionHint = process.platform === "darwin"
+          ? "；macOS 请在“系统设置 > 隐私与安全性 > 输入监控”允许本应用"
+          : "";
+        console.info(`[DIAG-keyboard] ${message}${permissionHint}`);
+      },
+    );
+    keyboardActivityService.start();
+  } catch {
+    console.info("[DIAG-keyboard] 全局键盘监听不可用，桌宠其他功能继续运行");
+  }
+}
+
 function saveLastPosition(): void {
   if (!handle || handle.window.isDestroyed()) {
     return;
@@ -176,6 +200,7 @@ app.whenReady().then(() => {
   );
   registerIpc();
   createPetWindow();
+  startKeyboardActivity();
 
   try {
     settingsManager.activate();
@@ -193,6 +218,7 @@ app.whenReady().then(() => {
 app.on("before-quit", saveLastPosition);
 
 app.on("will-quit", () => {
+  keyboardActivityService?.stop();
   globalShortcut.unregisterAll();
 });
 

@@ -8,6 +8,8 @@ import type {
 import { constrainPosition, scaledFootAnchor } from "./geometry.ts";
 import { resolveLookDirection } from "./look-direction.ts";
 
+export const KEYBOARD_INACTIVITY_TIMEOUT_MS = 1_500;
+
 interface PetMotionWindow {
   getBounds(): Bounds;
   getPosition(): number[];
@@ -33,6 +35,7 @@ export interface PetMotion {
   endDrag(): void;
   endPat(): void;
   getState(): PetState;
+  keyboardActivity(): void;
   summon(target: Point): void;
   startPat(): void;
   tick(deltaMs: number): void;
@@ -43,6 +46,7 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
   let target: Point | undefined;
   let climbingSide: Facing | undefined;
   let recentActions: string[] = [];
+  let typingActivityRemainingMs = 0;
   const state: PetState = {
     actionSequence: 0,
     action: "idle",
@@ -96,6 +100,10 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
     target = undefined;
     climbingSide = undefined;
     state.isMoving = false;
+  }
+
+  function resumeAmbientAction(): void {
+    setAction(typingActivityRemainingMs > 0 ? "typing" : "idle");
   }
 
   function edgeClimbPosition(): { side: Facing; x: number } | undefined {
@@ -166,7 +174,7 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
       if (startClimbing()) {
         return;
       }
-      setAction("idle");
+      resumeAmbientAction();
       options.onStateChange(snapshot());
     },
 
@@ -174,12 +182,24 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
       if (state.action !== options.character.interactionActions?.pat) {
         return;
       }
-      setAction("idle");
+      resumeAmbientAction();
       options.onStateChange(snapshot());
     },
 
     getState() {
       return snapshot();
+    },
+
+    keyboardActivity() {
+      typingActivityRemainingMs = KEYBOARD_INACTIVITY_TIMEOUT_MS;
+      if (state.action !== "idle" && state.action !== "typing") {
+        return;
+      }
+      if (state.action === "typing") {
+        return;
+      }
+      setAction("typing");
+      options.onStateChange(snapshot());
     },
 
     summon(targetPoint) {
@@ -212,6 +232,10 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
     },
 
     tick(deltaMs) {
+      typingActivityRemainingMs = Math.max(
+        typingActivityRemainingMs - deltaMs,
+        0,
+      );
       if (climbingSide) {
         const bounds = options.window.getBounds();
         const display = options.window.workAreaAt({
@@ -224,7 +248,7 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
         if (nextY === display.y) {
           climbingSide = undefined;
           state.isMoving = false;
-          setAction("idle");
+          resumeAmbientAction();
         } else {
           state.isMoving = true;
         }
@@ -237,6 +261,11 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
       }
 
       if (!target) {
+        if (state.action === "typing" && typingActivityRemainingMs === 0) {
+          setAction("idle");
+          options.onStateChange(snapshot());
+          return;
+        }
         if (updateLookDirection()) {
           options.onStateChange(snapshot());
         }
@@ -250,7 +279,7 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
 
       if (distance <= step) {
         state.position = target;
-        state.action = "idle";
+        resumeAmbientAction();
         state.isMoving = false;
         state.lookDirection = undefined;
         target = undefined;
