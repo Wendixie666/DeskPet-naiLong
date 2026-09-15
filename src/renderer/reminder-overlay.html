@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>奶蛙提醒</title>
+    <link rel="stylesheet" href="./reminder-overlay.css" />
+  </head>
+  <body>
+    <main id="reminder-card" role="button" tabindex="0" aria-label="打开备忘录">
+      <p id="reminder-text"></p>
+    </main>
+    <script type="module" src="../../dist/renderer-esm/renderer/reminder-overlay.js"></script>
+  </body>
+</html>

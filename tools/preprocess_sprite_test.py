@@ -80,6 +80,29 @@ class PreprocessSpriteTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "无法被帧数.*等分"):
             MODULE.grid_frame_ranges(7, 2)
 
+    def test_preprocess_ignores_isolated_narrow_noise_between_frames(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source.png"
+            output = root / "processed.png"
+            debug = root / "processed.debug.png"
+            self.create_source(source)
+            image = Image.new("RGB", (10, 4), (30, 80, 220))
+            pixels = image.load()
+            for x in (1, 2):
+                for y in (1, 2):
+                    pixels[x, y] = (220, 80, 80)
+            for x in (4, 5, 6):
+                for y in (0, 1, 2):
+                    pixels[x, y] = (80, 220, 80)
+            image.putpixel((8, 0), (220, 80, 80))
+            image.save(source)
+
+            MODULE.preprocess(source, output, 2, debug)
+
+            with Image.open(output) as result:
+                self.assertEqual(result.size, (6, 3))
+
 
 if __name__ == "__main__":
     unittest.main()

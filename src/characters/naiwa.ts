@@ -15,6 +15,7 @@ export const naiwa: CharacterConfig = {
     climb: "climb",
     drag: "drag",
     pat: "pat",
+    reminder: "reminder",
   },
   clickActions: ["wave", "heart", "egg", "poop", "turnHead"],
   trackingAction: "turnHead",
@@ -80,6 +81,13 @@ export const naiwa: CharacterConfig = {
       asset: "打字静态.processed.png",
       frameCount: 6,
       frameDurationMs: 120,
+    },
+    reminder: {
+      kind: "sprite",
+      asset: "生气.processed.png",
+      frameCount: 6,
+      frameDurationMs: 140,
+      holdFrameIndex: 3,
     },
   },
 };

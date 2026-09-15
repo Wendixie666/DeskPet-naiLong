@@ -3,6 +3,7 @@ import type {
   CharacterConfig,
   PetSnapshot,
   PetState,
+  SpriteAction,
   VisualAdjustment,
 } from "../shared/types";
 import type { DirectionalSpriteAction } from "../shared/types";
@@ -18,6 +19,14 @@ export interface DirectionalFrame {
   assetIndex: 0 | 1;
   frameIndex: number;
   mirrored: boolean;
+}
+
+export function spriteFrameIndex(action: SpriteAction, elapsedMs: number): number {
+  const frameIndex = Math.floor(elapsedMs / action.frameDurationMs);
+  if (action.holdFrameIndex === undefined) {
+    return frameIndex % action.frameCount;
+  }
+  return Math.min(frameIndex, action.holdFrameIndex);
 }
 
 export function directionFrame(
@@ -142,7 +151,7 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
           drawFrame(
             sources[0],
             action,
-            Math.floor(elapsed / action.frameDurationMs) % action.frameCount,
+            spriteFrameIndex(action, elapsed),
           );
         } else {
           drawFrame(sources[0], action, 0);

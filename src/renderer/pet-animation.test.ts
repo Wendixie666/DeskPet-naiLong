@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { directionFrame, introFrames } from "./pet-animation.ts";
+import {
+  directionFrame,
+  introFrames,
+  spriteFrameIndex,
+} from "./pet-animation.ts";
 import type { DirectionalSpriteAction } from "../shared/types";
 
 const action: DirectionalSpriteAction = {
@@ -53,4 +57,18 @@ test("directionFrame 右向取末帧不镜像，左向镜像", () => {
     frameIndex: 0,
     mirrored: false,
   });
+});
+
+test("spriteFrameIndex 播放到指定帧后定格", () => {
+  const action = {
+    asset: "reminder.png",
+    frameCount: 6,
+    frameDurationMs: 100,
+    holdFrameIndex: 3,
+    kind: "sprite" as const,
+  };
+
+  assert.equal(spriteFrameIndex(action, 299), 2);
+  assert.equal(spriteFrameIndex(action, 300), 3);
+  assert.equal(spriteFrameIndex(action, 1_000), 3);
 });

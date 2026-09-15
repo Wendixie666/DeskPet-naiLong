@@ -2,7 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { naiwa } from "../characters/naiwa.ts";
-import type { Bounds, PetSnapshot, PetState, Point } from "../shared/types.ts";
+import type {
+  Bounds,
+  PetSnapshot,
+  PetState,
+  Point,
+  TodoItem,
+} from "../shared/types.ts";
 import { createPetRuntime, type PetRuntimeWindow } from "./pet-runtime.ts";
 
 function createWindow(initialPosition: Point): PetRuntimeWindow & {
@@ -35,6 +41,7 @@ function createWindow(initialPosition: Point): PetRuntimeWindow & {
 function createRuntime(
   window: PetRuntimeWindow,
   snapshots: PetSnapshot[],
+  onReminderChange?: (todo?: TodoItem) => void,
 ) {
   return createPetRuntime({
     character: naiwa,
@@ -43,6 +50,7 @@ function createRuntime(
     onSnapshotChange(snapshot) {
       snapshots.push(snapshot);
     },
+    onReminderChange,
     onStateChange() {},
     scale: 1,
     window,
@@ -111,4 +119,56 @@ test("运行编排 module 按 tickMs 自驱推进桌宠运动并在 dispose 后�
   runtime.dispose();
   t.mock.timers.tick(160);
   assert.equal(states.length, tickCount);
+});
+
+test("运行编排 module 触发提醒并在展示时间结束后回到 idle", (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const snapshots: PetSnapshot[] = [];
+  const reminders: Array<TodoItem | undefined> = [];
+  const runtime = createRuntime(
+    createWindow({ x: 100, y: 200 }),
+    snapshots,
+    (todo) => reminders.push(todo),
+  );
+  const todo: TodoItem = {
+    id: "todo-1",
+    text: "改论文",
+    completed: false,
+    createdAt: "2026-09-15T10:00:00.000Z",
+    updatedAt: "2026-09-15T10:00:00.000Z",
+  };
+
+  assert.equal(runtime.triggerReminder(todo), true);
+  assert.equal(runtime.getSnapshot().state.action, "reminder");
+  assert.deepEqual(reminders, [todo]);
+
+  t.mock.timers.tick(6_999);
+  assert.equal(runtime.getSnapshot().state.action, "reminder");
+  t.mock.timers.tick(1);
+
+  assert.equal(runtime.getSnapshot().state.action, "idle");
+  assert.deepEqual(reminders, [todo, undefined]);
+});
+
+test("运行编排 module 可以提前关闭提醒并保持 Todo 未完成", (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  const reminders: Array<TodoItem | undefined> = [];
+  const runtime = createRuntime(
+    createWindow({ x: 100, y: 200 }),
+    [],
+    (todo) => reminders.push(todo),
+  );
+  const todo: TodoItem = {
+    id: "todo-2",
+    text: "读文档",
+    completed: false,
+    createdAt: "2026-09-15T10:00:00.000Z",
+    updatedAt: "2026-09-15T10:00:00.000Z",
+  };
+
+  runtime.triggerReminder(todo);
+  runtime.dismissReminder();
+
+  assert.equal(runtime.getSnapshot().state.action, "idle");
+  assert.deepEqual(reminders, [todo, undefined]);
 });

@@ -27,6 +27,11 @@ declare global {
       complete(id: string): Promise<TodoItem>;
       remove(id: string): Promise<void>;
     };
+    desktopReminderOverlay: {
+      click(): void;
+      onHide(listener: () => void): void;
+      onShow(listener: (text: string) => void): void;
+    };
   }
 }
 

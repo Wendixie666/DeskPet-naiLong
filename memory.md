@@ -22,7 +22,7 @@
 - renderer 手势只接受首个 `pointerId`，并在 `pointerup/pointercancel/lostpointercapture/blur` 统一结束；配置 `headInteraction` 时必须同时提供 `interactionActions.pat`。
 - 释放拖拽时若窗口距当前工作区左右边缘不超过 24px，`PetMotion` 会吸附到对应边缘，进入 climb 并让角色面向屏幕内侧（左边缘 facing right、右边缘 facing left）；攀爬沿 Y 轴向上移动，到达工作区顶部后恢复 idle。
 - 全局键盘活动由主进程 `KeyboardActivityService` 通过 `uiohook-napi` 转成无参数活动信号，再经 `PetRuntime.keyboardActivity()` 进入 `PetMotion`；键盘活动会打断当前动作并进入 typing，1.5 秒无活动后回 idle，不恢复被打断动作。Windows/macOS/Linux X11 可用，macOS 需 Input Monitoring/Accessibility 权限，Linux 原生 Wayland 不保证支持；服务失败不阻止桌宠启动，退出时停止 hook。
-- 工具箱入口位于桌宠右键菜单，备忘录使用独立 Memo 窗口；Todo 数据保存在 Electron `userData/todos.json`，`ReminderScheduler` 在主进程检查 ISO deadline，当前 reminder handler 使用 Electron Notification，后续可替换为明确的 PetRuntime reminder event。
+- 工具箱入口位于桌宠右键菜单，备忘录使用独立 Memo 窗口；Todo 数据保存在 Electron `userData/todos.json`，主进程链路是 `ReminderScheduler.onReminder(todo)` → `PetRuntime.triggerReminder(todo)` → 角色配置的 `reminder` 动作与独立 Overlay，Electron Notification 只作为角色提醒不可用时的 fallback。
 - Linux 上打 Windows NSIS 包需要 wine：项目内置便携版 `.wine-local/wine-10.0-amd64/`（Kron4ek 构建），打包前 `export PATH="$PWD/.wine-local/wine-10.0-amd64/bin:$PATH"` 再跑 `npm run package:win`；产物为 `release/DeskPet-naiLong Setup <版本>.exe`（nsis）和 `DeskPet-naiLong <版本>.exe`（portable 单文件）。
 - 构建关键约束：`tsc -p tsconfig.renderer.json` 会把 renderer import 到的非 renderer 文件（preload/shared/pet）按 ES2022 重新输出，曾把 dist/preload 覆盖成 ESM 导致打包版全坏。现约定：pass1（CJS）exclude src/renderer，pass2 输出到独立目录 `dist/renderer-esm/`，HTML 引用该路径；build 脚本先清空 dist 防旧产物残留。
 - Electron 沙箱 preload 只能 require 内置模块，不能 require 相对路径文件；preload import 了 shared/channels 后必须 `sandbox: false`（保留 contextIsolation），pet 窗口、settings 窗口和 scripts/check-render.cjs 三处需保持一致。

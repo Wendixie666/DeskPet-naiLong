@@ -13,6 +13,7 @@ test("奶蛙配置提供行为层需要的全部通用动作", () => {
     climb: "climb",
     drag: "drag",
     pat: "pat",
+    reminder: "reminder",
   });
   assert.equal(naiwa.actions.pat.kind, "sprite");
   assert.equal(naiwa.actions.climb.kind, "sprite");
@@ -20,6 +21,9 @@ test("奶蛙配置提供行为层需要的全部通用动作", () => {
   assert.equal(naiwa.actions.typing.kind, "sprite");
   assert.equal(naiwa.actions.typing.frameCount, 6);
   assert.equal(naiwa.actions.typing.frameDurationMs, 120);
+  assert.equal(naiwa.actions.reminder.kind, "sprite");
+  assert.equal(naiwa.actions.reminder.asset, "生气.processed.png");
+  assert.equal(naiwa.actions.reminder.holdFrameIndex, 3);
 
   for (const action of naiwa.clickActions) {
     assert.ok(naiwa.actions[action]);

@@ -39,6 +39,8 @@ export interface PetMotion {
   summon(target: Point): void;
   startPat(): void;
   tick(deltaMs: number): void;
+  triggerReminder(): boolean;
+  endReminder(): void;
 }
 
 export function createPetMotion(options: PetMotionOptions): PetMotion {
@@ -47,6 +49,7 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
   let climbingSide: Facing | undefined;
   let recentActions: string[] = [];
   let typingActivityRemainingMs = 0;
+  let reminderPending = false;
   const state: PetState = {
     actionSequence: 0,
     action: "idle",
@@ -106,6 +109,28 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
     setAction(typingActivityRemainingMs > 0 ? "typing" : "idle");
   }
 
+  function startReminder(): boolean {
+    const action = options.character.interactionActions?.reminder;
+    if (!action || state.action === action) {
+      return false;
+    }
+    stopMovement();
+    typingActivityRemainingMs = 0;
+    setAction(action);
+    options.onStateChange(snapshot());
+    return true;
+  }
+
+  function resumeAfterReminder(): void {
+    if (reminderPending) {
+      reminderPending = false;
+      if (startReminder()) {
+        return;
+      }
+    }
+    resumeAmbientAction();
+  }
+
   function edgeClimbPosition(): { side: Facing; x: number } | undefined {
     const bounds = options.window.getBounds();
     const display = options.window.workAreaAt({
@@ -149,6 +174,12 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
       if (climbingSide) {
         stopMovement();
       }
+      if (reminderPending) {
+        reminderPending = false;
+        if (startReminder()) {
+          return;
+        }
+      }
       state.action = nextAction();
       state.actionSequence += 1;
       state.lookDirection = undefined;
@@ -174,7 +205,7 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
       if (startClimbing()) {
         return;
       }
-      resumeAmbientAction();
+      resumeAfterReminder();
       options.onStateChange(snapshot());
     },
 
@@ -182,7 +213,7 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
       if (state.action !== options.character.interactionActions?.pat) {
         return;
       }
-      resumeAmbientAction();
+      resumeAfterReminder();
       options.onStateChange(snapshot());
     },
 
@@ -191,8 +222,17 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
     },
 
     keyboardActivity() {
+      if (state.action === options.character.interactionActions?.reminder) {
+        return;
+      }
       typingActivityRemainingMs = KEYBOARD_INACTIVITY_TIMEOUT_MS;
       stopMovement();
+      if (reminderPending) {
+        reminderPending = false;
+        if (startReminder()) {
+          return;
+        }
+      }
       if (state.action === "typing") {
         return;
       }
@@ -229,6 +269,30 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
       options.onStateChange(snapshot());
     },
 
+    triggerReminder() {
+      const action = options.character.interactionActions?.reminder;
+      if (!action || state.action === action || reminderPending) {
+        return false;
+      }
+      if (state.action === options.character.interactionActions?.drag
+        || state.action === options.character.interactionActions?.pat
+        || state.isMoving) {
+        reminderPending = true;
+        return true;
+      }
+      return startReminder();
+    },
+
+    endReminder() {
+      if (state.action !== options.character.interactionActions?.reminder) {
+        return;
+      }
+      typingActivityRemainingMs = 0;
+      stopMovement();
+      setAction("idle");
+      options.onStateChange(snapshot());
+    },
+
     tick(deltaMs) {
       typingActivityRemainingMs = Math.max(
         typingActivityRemainingMs - deltaMs,
@@ -246,7 +310,12 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
         if (nextY === display.y) {
           climbingSide = undefined;
           state.isMoving = false;
-          resumeAmbientAction();
+          if (reminderPending) {
+            reminderPending = false;
+            startReminder();
+          } else {
+            resumeAmbientAction();
+          }
         } else {
           state.isMoving = true;
         }
@@ -277,10 +346,15 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
 
       if (distance <= step) {
         state.position = target;
-        resumeAmbientAction();
         state.isMoving = false;
         state.lookDirection = undefined;
         target = undefined;
+        if (reminderPending) {
+          reminderPending = false;
+          startReminder();
+        } else {
+          resumeAmbientAction();
+        }
       } else {
         state.position = {
           x: state.position.x + dx / distance * step,

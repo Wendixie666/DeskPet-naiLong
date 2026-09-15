@@ -26,6 +26,7 @@ import type {
   Point,
   SettingsSnapshot,
   Size,
+  TodoItem,
 } from "../shared/types";
 import {
   createSettingsManager,
@@ -94,6 +95,15 @@ function settingsSnapshot(): SettingsSnapshot {
 function summonAtCursor(): void {
   const cursor = screen.getCursorScreenPoint();
   handle?.runtime.summon({ x: cursor.x, y: cursor.y });
+}
+
+function showSystemReminder(todo: TodoItem): void {
+  if (Notification.isSupported()) {
+    new Notification({
+      title: "奶蛙提醒你",
+      body: todo.text,
+    }).show();
+  }
 }
 
 async function logGpuDiagnostics(): Promise<void> {
@@ -178,6 +188,8 @@ function createPetWindow(): void {
     initialPosition: initialPosition(size),
     cursorPosition: () => screen.getCursorScreenPoint(),
     workAreaAt: (point) => screen.getDisplayNearestPoint(point).workArea,
+    onReminderClick: showMemoWindow,
+    onReminderFallback: showSystemReminder,
     onClosed() {
       handle = undefined;
     },
@@ -221,17 +233,14 @@ app.whenReady().then(() => {
   reminderScheduler = createReminderScheduler({
     store: todoStore,
     onReminder(todo) {
-      if (Notification.isSupported()) {
-        new Notification({
-          title: "奶蛙提醒你",
-          body: todo.text,
-        }).show();
+      if (!handle || !handle.runtime.triggerReminder(todo)) {
+        showSystemReminder(todo);
       }
     },
   });
   registerIpc();
-  reminderScheduler.start();
   createPetWindow();
+  reminderScheduler.start();
   startKeyboardActivity();
 
   try {

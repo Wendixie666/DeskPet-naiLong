@@ -8,15 +8,22 @@ import type {
   PetState,
   Point,
   Size,
+  TodoItem,
 } from "../shared/types";
 import { createPetRuntime, type PetRuntime } from "./pet-runtime";
 import { petChannels } from "../shared/channels.ts";
+import {
+  createReminderOverlay,
+  type ReminderOverlay,
+} from "./reminder-overlay";
 
 export interface OpenPetWindowOptions {
   character: CharacterConfig;
   cursorPosition(): Point;
   initialPosition: Point;
   onClosed(): void;
+  onReminderClick(): void;
+  onReminderFallback(todo: TodoItem): void;
   scale: number;
   size: Size;
   workAreaAt(point: Point): Bounds;
@@ -55,14 +62,55 @@ export function openPetWindow(options: OpenPetWindowOptions): PetWindowHandle {
     });
   }
 
-  const runtime = createPetRuntime({
+  let reminderOverlay: ReminderOverlay | undefined;
+  let reminderOverlayFailed = false;
+  let currentReminder: TodoItem | undefined;
+  let runtime: PetRuntime;
+  try {
+    reminderOverlay = createReminderOverlay({
+      anchor: {
+        getBounds: () => window.getBounds(),
+        workAreaAt: options.workAreaAt,
+      },
+      onClick() {
+        runtime.dismissReminder();
+        options.onReminderClick();
+      },
+      onError() {
+        reminderOverlayFailed = true;
+        if (currentReminder) {
+          options.onReminderFallback(currentReminder);
+          currentReminder = undefined;
+        }
+      },
+    });
+  } catch (error) {
+    console.error("提醒卡片窗口创建失败", error);
+    reminderOverlayFailed = true;
+  }
+
+  runtime = createPetRuntime({
     character: options.character,
     initialPosition: options.initialPosition,
     scale: options.scale,
     cursorPosition: options.cursorPosition,
     tickMs: 16,
     onStateChange(state: PetState) {
+      reminderOverlay?.syncPosition();
       window.webContents.send(petChannels.state, state);
+    },
+    onReminderChange(todo) {
+      currentReminder = todo;
+      if (!todo) {
+        reminderOverlay?.hide();
+        return;
+      }
+      if (!reminderOverlay || reminderOverlayFailed) {
+        currentReminder = undefined;
+        options.onReminderFallback(todo);
+        return;
+      }
+      reminderOverlay.show(todo.text);
     },
     onSnapshotChange(snapshot: PetSnapshot) {
       window.webContents.send(petChannels.snapshotChanged, snapshot);
@@ -81,6 +129,7 @@ export function openPetWindow(options: OpenPetWindowOptions): PetWindowHandle {
 
   window.on("closed", () => {
     runtime.dispose();
+    reminderOverlay?.dispose();
     options.onClosed();
   });
 

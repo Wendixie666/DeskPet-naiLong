@@ -8,12 +8,18 @@ import {
 
 function createKeyboardTestMotion(
   onStateChange: (state: { action: string; actionSequence: number }) => void,
+  withReminder = false,
 ) {
   let position: [number, number] = [100, 200];
   return createPetMotion({
     character: {
       clickActions: ["wave"],
-      interactionActions: { climb: "climb", drag: "drag", pat: "pat" },
+      interactionActions: {
+        climb: "climb",
+        drag: "drag",
+        pat: "pat",
+        ...(withReminder ? { reminder: "reminder" } : {}),
+      },
       speed: 100,
       visual: {
         contentHeight: 180,
@@ -431,4 +437,27 @@ test("转头动作会根据主进程提供的鼠标坐标更新目光方向", ()
   cursor = { x: 400, y: 200 };
   motion.tick(16);
   assert.equal(motion.getState().lookDirection, "right");
+});
+
+test("提醒可以进入 reminder，并在结束后回到 idle", () => {
+  const motion = createKeyboardTestMotion(() => {}, true);
+
+  assert.equal(motion.triggerReminder(), true);
+  assert.equal(motion.getState().action, "reminder");
+
+  motion.endReminder();
+
+  assert.equal(motion.getState().action, "idle");
+});
+
+test("拖拽期间到达提醒时间会延迟到直接交互结束后显示", () => {
+  const motion = createKeyboardTestMotion(() => {}, true);
+
+  motion.dragBy(1, 0);
+  assert.equal(motion.triggerReminder(), true);
+  assert.equal(motion.getState().action, "drag");
+
+  motion.endDrag();
+
+  assert.equal(motion.getState().action, "reminder");
 });

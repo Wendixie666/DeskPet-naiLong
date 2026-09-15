@@ -24,3 +24,9 @@ export const memoChannels = {
   complete: "memo:complete",
   remove: "memo:remove",
 } as const;
+
+export const reminderOverlayChannels = {
+  click: "reminder-overlay:click",
+  hide: "reminder-overlay:hide",
+  show: "reminder-overlay:show",
+} as const;

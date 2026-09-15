@@ -31,6 +31,7 @@ export interface CharacterInteractionActions {
   climb: string;
   drag: string;
   pat: string;
+  reminder?: string;
 }
 
 export interface PetState {
@@ -53,6 +54,7 @@ export interface SpriteAction {
   asset: string;
   frameCount: number;
   frameDurationMs: number;
+  holdFrameIndex?: number;
   kind: "sprite";
 }
 

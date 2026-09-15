@@ -20,6 +20,8 @@ def is_blue_screen(red: int, green: int, blue: int) -> bool:
 
 # 透明底素材帧间隙常残留 alpha 很低的杂散像素，低于该阈值的像素视为背景。
 ALPHA_THRESHOLD = 8
+# 孤立单列前景通常是素材噪点，不作为独立帧。
+MIN_FRAME_WIDTH = 2
 
 
 def foreground_mask(image: Image.Image) -> list[list[bool]]:
@@ -45,7 +47,11 @@ def find_frame_ranges(mask: list[list[bool]], width: int) -> list[tuple[int, int
         elif not has_foreground and start is not None:
             ranges.append((start, x))
             start = None
-    return ranges
+    return [
+        (left, right)
+        for left, right in ranges
+        if right - left >= MIN_FRAME_WIDTH
+    ]
 
 
 def find_bbox(mask: list[list[bool]], left: int, right: int, height: int) -> tuple[int, int, int, int]:

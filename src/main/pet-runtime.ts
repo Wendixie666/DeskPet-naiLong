@@ -4,6 +4,7 @@ import type {
   PetSnapshot,
   PetState,
   Point,
+  TodoItem,
 } from "../shared/types";
 import { createPetMotion, type PetMotion } from "../pet/motion.ts";
 import { resizePetWindow } from "./pet-window.ts";
@@ -21,6 +22,7 @@ interface PetRuntimeOptions {
   cursorPosition(): Point;
   initialPosition: Point;
   onSnapshotChange(snapshot: PetSnapshot): void;
+  onReminderChange?(todo?: TodoItem): void;
   onStateChange(state: PetState): void;
   scale: number;
   tickMs?: number;
@@ -39,12 +41,35 @@ export interface PetRuntime {
   keyboardActivity(): void;
   summon(target: Point): void;
   startPat(): void;
+  dismissReminder(): void;
+  triggerReminder(todo: TodoItem): boolean;
 }
+
+export const REMINDER_DISPLAY_DURATION_MS = 7_000;
 
 export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
   let character = options.character;
   let scale = options.scale;
   let motion: PetMotion;
+  let pendingReminder: TodoItem | undefined;
+  let activeReminder: TodoItem | undefined;
+  let reminderTimer: ReturnType<typeof setTimeout> | undefined;
+
+  function notifyMotionStateChange(state: PetState): void {
+    const reminderAction = character.interactionActions?.reminder;
+    if (state.action === reminderAction && pendingReminder) {
+      activeReminder = pendingReminder;
+      pendingReminder = undefined;
+      options.onReminderChange?.(activeReminder);
+      reminderTimer = setTimeout(() => {
+        reminderTimer = undefined;
+        activeReminder = undefined;
+        options.onReminderChange?.();
+        motion.endReminder();
+      }, REMINDER_DISPLAY_DURATION_MS);
+    }
+    options.onStateChange(state);
+  }
 
   function snapshot(): PetSnapshot {
     return {
@@ -59,13 +84,26 @@ export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
       initialPosition: position,
       scale,
       cursorPosition: options.cursorPosition,
-      onStateChange: options.onStateChange,
+      onStateChange: notifyMotionStateChange,
       window: options.window,
     });
     options.onSnapshotChange(snapshot());
   }
 
   configure(options.initialPosition);
+
+  function interruptReminder(): void {
+    if (!activeReminder) {
+      return;
+    }
+    if (reminderTimer !== undefined) {
+      clearTimeout(reminderTimer);
+      reminderTimer = undefined;
+    }
+    activeReminder = undefined;
+    options.onReminderChange?.();
+    motion.endReminder();
+  }
 
   let previousTime = performance.now();
   const animationTimer = options.tickMs === undefined ? undefined : setInterval(() => {
@@ -87,12 +125,15 @@ export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
         nextCharacter,
         nextScale,
       );
+      interruptReminder();
+      pendingReminder = undefined;
       character = nextCharacter;
       scale = nextScale;
       configure(position);
     },
 
     click() {
+      interruptReminder();
       motion.click();
     },
 
@@ -100,9 +141,12 @@ export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
       if (animationTimer !== undefined) {
         clearInterval(animationTimer);
       }
+      interruptReminder();
+      pendingReminder = undefined;
     },
 
     dragBy(deltaX, deltaY) {
+      interruptReminder();
       motion.dragBy(deltaX, deltaY);
     },
 
@@ -125,11 +169,29 @@ export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
     },
 
     summon(target) {
+      interruptReminder();
       motion.summon(target);
     },
 
     startPat() {
+      interruptReminder();
       motion.startPat();
+    },
+
+    dismissReminder() {
+      interruptReminder();
+    },
+
+    triggerReminder(todo) {
+      if (activeReminder || pendingReminder) {
+        return false;
+      }
+      pendingReminder = todo;
+      if (motion.triggerReminder()) {
+        return true;
+      }
+      pendingReminder = undefined;
+      return false;
     },
   };
 }

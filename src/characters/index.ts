@@ -28,6 +28,15 @@ export class CharacterRegistry {
           throw new Error(`角色 ${config.id} 缺少交互动作 ${name} 的配置`);
         }
       }
+      for (const [name, action] of Object.entries(config.actions)) {
+        if (action.kind === "sprite"
+          && action.holdFrameIndex !== undefined
+          && (!Number.isInteger(action.holdFrameIndex)
+            || action.holdFrameIndex < 0
+            || action.holdFrameIndex >= action.frameCount)) {
+          throw new Error(`角色 ${config.id} 的动作 ${name} 定格帧无效`);
+        }
+      }
     }
     this.characters = new Map(configs.map((config) => [config.id, config]));
     this.defaultCharacterId = defaultCharacterId;

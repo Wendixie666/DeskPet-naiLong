@@ -97,6 +97,14 @@ app.whenReady().then(async () => {
   const facingLeft = await window.webContents.executeJavaScript(
     'document.querySelector("#pet-canvas").classList.contains("facing-left")',
   );
+  window.webContents.send("pet:state", {
+    action: "reminder",
+    facing: "right",
+    isMoving: false,
+    position: { x: 0, y: 0 },
+  });
+  await new Promise((resolve) => setTimeout(resolve, 600));
+  const reminderVisiblePixels = await visiblePixelCount(window);
 
   const settingsWindow = new BrowserWindow({
     width: 460,
@@ -144,13 +152,41 @@ app.whenReady().then(async () => {
     newTodoButton: document.querySelector("#new-todo").textContent,
   }))()`);
 
+  const reminderWindow = new BrowserWindow({
+    width: 280,
+    height: 88,
+    show: false,
+    transparent: true,
+    frame: false,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      preload: path.join(projectRoot, "dist/preload/reminder-overlay.js"),
+      sandbox: false,
+    },
+  });
+  reminderWindow.webContents.on("console-message", (event) => {
+    if (event.level === "error") {
+      rendererErrors.push(event.message);
+    }
+  });
+  await reminderWindow.loadFile(path.join(projectRoot, "src/renderer/reminder-overlay.html"));
+  reminderWindow.webContents.send("reminder-overlay:show", "改论文");
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  const reminderState = await reminderWindow.webContents.executeJavaScript(`(() => ({
+    hidden: document.querySelector("#reminder-card").hidden,
+    text: document.querySelector("#reminder-text").textContent,
+  }))()`);
+
   const result = {
     canvasState,
     facingLeft,
     rendererErrors,
     settingsState,
     memoState,
+    reminderState,
     visiblePixels,
+    reminderVisiblePixels,
     walkVisiblePixels,
   };
   console.log(JSON.stringify(result));
@@ -162,8 +198,11 @@ app.whenReady().then(async () => {
     || settingsState.characterOptions !== 1
     || settingsState.shortcut !== settings.summonShortcut
     || memoState.title !== "备忘录"
+    || reminderState.hidden
+    || reminderState.text !== "你「改论文」了吗？"
     || visiblePixels < 1_000
     || !facingLeft
+    || reminderVisiblePixels < 1_000
     || walkVisiblePixels < 1_000
   ) {
     app.exit(1);
