@@ -120,6 +120,125 @@ test("拖拽取消召唤，点击优先选择最近没有出现的动作", () =>
   assert.deepEqual(states, ["walk", "idle", "wave", "heart"]);
 });
 
+test("真正拖动期间保持 drag，松开后恢复 idle", () => {
+  let position: [number, number] = [100, 200];
+  const states: string[] = [];
+  const motion = createPetMotion({
+    character: {
+      clickActions: ["wave"],
+      interactionActions: { climb: "climb", drag: "drag", pat: "pat" },
+      speed: 100,
+      visual: {
+        contentHeight: 180,
+        footAnchor: { x: 96, y: 202 },
+      },
+    },
+    initialPosition: { x: 100, y: 200 },
+    onStateChange(state) {
+      states.push(state.action);
+    },
+    scale: 1,
+    window: {
+      getBounds: () => ({ x: position[0], y: position[1], width: 192, height: 208 }),
+      getPosition: () => position,
+      setPosition(x, y) {
+        position = [x, y];
+      },
+      workAreaAt: () => ({ x: 0, y: 0, width: 1_920, height: 1_040 }),
+    },
+  });
+
+  motion.dragBy(1, 0);
+  assert.equal(motion.getState().action, "drag");
+  const sequence = motion.getState().actionSequence;
+  motion.dragBy(2, 0);
+  assert.equal(motion.getState().actionSequence, sequence);
+  motion.endDrag();
+
+  assert.equal(motion.getState().action, "idle");
+  assert.deepEqual(states, ["drag", "drag", "idle"]);
+});
+
+test("松开在左右屏幕边缘时分别吸附并面向屏幕内侧攀爬", () => {
+  let position: [number, number] = [100, 200];
+  const motion = createPetMotion({
+    character: {
+      clickActions: ["wave"],
+      interactionActions: { climb: "climb", drag: "drag", pat: "pat" },
+      speed: 260,
+      visual: {
+        contentHeight: 180,
+        footAnchor: { x: 96, y: 202 },
+      },
+    },
+    initialPosition: { x: 100, y: 200 },
+    onStateChange() {},
+    scale: 1,
+    window: {
+      getBounds: () => ({ x: position[0], y: position[1], width: 192, height: 208 }),
+      getPosition: () => position,
+      setPosition(x, y) {
+        position = [x, y];
+      },
+      workAreaAt: () => ({ x: 0, y: 0, width: 1_920, height: 1_040 }),
+    },
+  });
+
+  motion.dragBy(-90, 0);
+  motion.endDrag();
+  assert.deepEqual(position, [0, 200]);
+  assert.equal(motion.getState().action, "climb");
+  assert.equal(motion.getState().facing, "right");
+
+  const sequence = motion.getState().actionSequence;
+  motion.tick(100);
+  assert.equal(motion.getState().actionSequence, sequence);
+  motion.tick(1_000);
+  assert.deepEqual(position, [0, 0]);
+  assert.equal(motion.getState().action, "idle");
+
+  motion.dragBy(1_900, 0);
+  motion.endDrag();
+  assert.deepEqual(position, [1_728, 0]);
+  assert.equal(motion.getState().action, "climb");
+  assert.equal(motion.getState().facing, "left");
+});
+
+test("摸头按住期间循环同一动作，松开后恢复 idle", () => {
+  const states: string[] = [];
+  const motion = createPetMotion({
+    character: {
+      clickActions: ["wave"],
+      interactionActions: { climb: "climb", drag: "drag", pat: "pat" },
+      speed: 100,
+      visual: {
+        contentHeight: 180,
+        footAnchor: { x: 96, y: 202 },
+      },
+    },
+    initialPosition: { x: 100, y: 200 },
+    onStateChange(state) {
+      states.push(state.action);
+    },
+    scale: 1,
+    window: {
+      getBounds: () => ({ x: 100, y: 200, width: 192, height: 208 }),
+      getPosition: () => [100, 200],
+      setPosition() {},
+      workAreaAt: () => ({ x: 0, y: 0, width: 1_920, height: 1_040 }),
+    },
+  });
+
+  motion.startPat();
+  const sequence = motion.getState().actionSequence;
+  motion.startPat();
+  motion.endPat();
+
+  assert.equal(motion.getState().action, "idle");
+  assert.equal(sequence, 1);
+  assert.deepEqual(states, ["pat", "pat", "idle"]);
+});
+
 test("再次切换到同一个动作也会生成新的动作序号", () => {
   const motion = createPetMotion({
     character: {

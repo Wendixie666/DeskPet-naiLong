@@ -129,8 +129,11 @@ function registerIpc(): void {
     click: () => handle?.runtime.click(),
     contextMenu: showPetContextMenu,
     dragBy: (deltaX, deltaY) => handle?.runtime.dragBy(deltaX, deltaY),
+    endDrag: () => handle?.runtime.endDrag(),
+    endPat: () => handle?.runtime.endPat(),
     getSettings: settingsSnapshot,
     snapshot: currentSnapshot,
+    startPat: () => handle?.runtime.startPat(),
     updateSettings: (value) => {
       settingsManager.update(value);
       return settingsSnapshot();

@@ -24,6 +24,13 @@ export interface VisualAdjustment {
 export interface CharacterVisual {
   contentHeight: number;
   footAnchor: Point;
+  headInteraction?: Bounds;
+}
+
+export interface CharacterInteractionActions {
+  climb: string;
+  drag: string;
+  pat: string;
 }
 
 export interface PetState {
@@ -64,6 +71,7 @@ export interface CharacterConfig {
   assetRoot: string;
   clickActions: string[];
   id: string;
+  interactionActions?: CharacterInteractionActions;
   name: string;
   size: Size;
   speed: number;

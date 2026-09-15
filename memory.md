@@ -18,6 +18,8 @@
 - 脚底中心几何换算集中在纯函数模块 `pet/geometry`：召唤路径（motion）与缩放路径（pet-window）共用 `scaledFootAnchor`/`constrainPosition`，禁止再各自实现 clamp 公式。
 - IPC 通道名单一事实来源在 `shared/channels.ts`（含推送通道 pet:state / pet:snapshot-changed）；renderer 的 `global.d.ts` 用 `typeof import("../preload/index").desktopPetBridge` 引用 preload bridge 类型；`pet:summon` 通道已删除（召唤只走主进程全局快捷键）。
 - renderer 动画：帧序列纯函数 `directionFrame`/`introFrames` 从 pet-animation 闭包提升为模块导出，directional/sprite/static 三类动作共用单一 rAF 循环。
+- 交互动作由 `CharacterConfig.interactionActions` 注册，`PetMotion` 通过 `startPat/endPat` 和 `dragBy/endDrag` 管理按住生命周期；头部命中区域使用 `CharacterVisual.headInteraction` 的 canvas 局部坐标，renderer 只负责把缩放后的指针坐标换算回 canvas 坐标。
+- 释放拖拽时若窗口距当前工作区左右边缘不超过 24px，`PetMotion` 会吸附到对应边缘，进入 climb 并让角色面向屏幕内侧（左边缘 facing right、右边缘 facing left）；攀爬沿 Y 轴向上移动，到达工作区顶部后恢复 idle。
 - Linux 上打 Windows NSIS 包需要 wine：项目内置便携版 `.wine-local/wine-10.0-amd64/`（Kron4ek 构建），打包前 `export PATH="$PWD/.wine-local/wine-10.0-amd64/bin:$PATH"` 再跑 `npm run package:win`；产物为 `release/DeskPet-naiLong Setup <版本>.exe`（nsis）和 `DeskPet-naiLong <版本>.exe`（portable 单文件）。
 - 构建关键约束：`tsc -p tsconfig.renderer.json` 会把 renderer import 到的非 renderer 文件（preload/shared/pet）按 ES2022 重新输出，曾把 dist/preload 覆盖成 ESM 导致打包版全坏。现约定：pass1（CJS）exclude src/renderer，pass2 输出到独立目录 `dist/renderer-esm/`，HTML 引用该路径；build 脚本先清空 dist 防旧产物残留。
 - Electron 沙箱 preload 只能 require 内置模块，不能 require 相对路径文件；preload import 了 shared/channels 后必须 `sandbox: false`（保留 contextIsolation），pet 窗口、settings 窗口和 scripts/check-render.cjs 三处需保持一致。

@@ -10,6 +10,12 @@ export const desktopPetBridge = {
   dragBy(deltaX: number, deltaY: number): void {
     ipcRenderer.send(petChannels.dragBy, deltaX, deltaY);
   },
+  endDrag(): void {
+    ipcRenderer.send(petChannels.dragEnd);
+  },
+  endPat(): void {
+    ipcRenderer.send(petChannels.patEnd);
+  },
   getSnapshot(): Promise<PetSnapshot> {
     return ipcRenderer.invoke(petChannels.snapshot);
   },
@@ -29,6 +35,9 @@ export const desktopPetBridge = {
   },
   openContextMenu(): void {
     ipcRenderer.send(petChannels.contextMenu);
+  },
+  startPat(): void {
+    ipcRenderer.send(petChannels.patStart);
   },
 };
 

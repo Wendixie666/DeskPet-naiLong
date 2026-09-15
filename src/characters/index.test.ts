@@ -39,3 +39,13 @@ test("CharacterRegistry 拒绝空点击动作或未配置的点击动作", () =>
     /missing/,
   );
 });
+
+test("CharacterRegistry 校验交互动作配置", () => {
+  assert.throws(
+    () => new CharacterRegistry([{
+      ...naiwa,
+      interactionActions: { ...naiwa.interactionActions!, pat: "missing" },
+    }], naiwa.id),
+    /交互动作 pat/,
+  );
+});

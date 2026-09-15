@@ -1,4 +1,10 @@
-import type { Bounds, CharacterConfig, PetState, Point } from "../shared/types";
+import type {
+  Bounds,
+  CharacterConfig,
+  Facing,
+  PetState,
+  Point,
+} from "../shared/types";
 import { constrainPosition, scaledFootAnchor } from "./geometry.ts";
 import { resolveLookDirection } from "./look-direction.ts";
 
@@ -10,7 +16,10 @@ interface PetMotionWindow {
 }
 
 interface PetMotionOptions {
-  character: Pick<CharacterConfig, "clickActions" | "speed" | "trackingAction" | "visual">;
+  character: Pick<
+    CharacterConfig,
+    "clickActions" | "interactionActions" | "speed" | "trackingAction" | "visual"
+  >;
   initialPosition: Point;
   onStateChange(state: PetState): void;
   scale: number;
@@ -21,13 +30,18 @@ interface PetMotionOptions {
 export interface PetMotion {
   click(): void;
   dragBy(deltaX: number, deltaY: number): void;
+  endDrag(): void;
+  endPat(): void;
   getState(): PetState;
   summon(target: Point): void;
+  startPat(): void;
   tick(deltaMs: number): void;
 }
 
 export function createPetMotion(options: PetMotionOptions): PetMotion {
+  const edgeSnapDistance = 24;
   let target: Point | undefined;
+  let climbingSide: Facing | undefined;
   let recentActions: string[] = [];
   const state: PetState = {
     actionSequence: 0,
@@ -69,8 +83,64 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
     return action;
   }
 
+  function setAction(action: string): void {
+    if (state.action === action) {
+      return;
+    }
+    state.action = action;
+    state.actionSequence += 1;
+    state.lookDirection = undefined;
+  }
+
+  function stopMovement(): void {
+    target = undefined;
+    climbingSide = undefined;
+    state.isMoving = false;
+  }
+
+  function edgeClimbPosition(): { side: Facing; x: number } | undefined {
+    const bounds = options.window.getBounds();
+    const display = options.window.workAreaAt({
+      x: bounds.x + bounds.width / 2,
+      y: bounds.y + bounds.height / 2,
+    });
+    const rightDistance = display.x + display.width - bounds.x - bounds.width;
+    if (bounds.x - display.x <= edgeSnapDistance) {
+      return { side: "left", x: display.x };
+    }
+    if (rightDistance <= edgeSnapDistance) {
+      return {
+        side: "right",
+        x: display.x + display.width - bounds.width,
+      };
+    }
+    return undefined;
+  }
+
+  function startClimbing(): boolean {
+    const action = options.character.interactionActions?.climb;
+    const edge = edgeClimbPosition();
+    if (!action || !edge) {
+      return false;
+    }
+
+    const bounds = options.window.getBounds();
+    stopMovement();
+    climbingSide = edge.side;
+    state.position = { x: edge.x, y: bounds.y };
+    state.facing = edge.side === "left" ? "right" : "left";
+    state.isMoving = true;
+    setAction(action);
+    options.window.setPosition(state.position.x, state.position.y);
+    options.onStateChange(snapshot());
+    return true;
+  }
+
   return {
     click() {
+      if (climbingSide) {
+        stopMovement();
+      }
       state.action = nextAction();
       state.actionSequence += 1;
       state.lookDirection = undefined;
@@ -79,10 +149,8 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
 
     dragBy(deltaX, deltaY) {
       const [x, y] = options.window.getPosition();
-      target = undefined;
-      state.action = "idle";
-      state.lookDirection = undefined;
-      state.isMoving = false;
+      stopMovement();
+      setAction(options.character.interactionActions?.drag ?? "idle");
       state.position = {
         x: x + Math.round(deltaX),
         y: y + Math.round(deltaY),
@@ -91,11 +159,31 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
       options.onStateChange(snapshot());
     },
 
+    endDrag() {
+      if (state.action !== options.character.interactionActions?.drag) {
+        return;
+      }
+      if (startClimbing()) {
+        return;
+      }
+      setAction("idle");
+      options.onStateChange(snapshot());
+    },
+
+    endPat() {
+      if (state.action !== options.character.interactionActions?.pat) {
+        return;
+      }
+      setAction("idle");
+      options.onStateChange(snapshot());
+    },
+
     getState() {
       return snapshot();
     },
 
     summon(targetPoint) {
+      stopMovement();
       const bounds = options.window.getBounds();
       const footAnchor = scaledFootAnchor(options.character, options.scale);
       target = constrainPosition(
@@ -113,7 +201,41 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
       options.onStateChange(snapshot());
     },
 
+    startPat() {
+      const action = options.character.interactionActions?.pat;
+      if (!action) {
+        return;
+      }
+      stopMovement();
+      setAction(action);
+      options.onStateChange(snapshot());
+    },
+
     tick(deltaMs) {
+      if (climbingSide) {
+        const bounds = options.window.getBounds();
+        const display = options.window.workAreaAt({
+          x: bounds.x + bounds.width / 2,
+          y: bounds.y + bounds.height / 2,
+        });
+        const step = options.character.speed * deltaMs / 1_000;
+        const nextY = Math.max(display.y, state.position.y - step);
+        state.position = { x: state.position.x, y: nextY };
+        if (nextY === display.y) {
+          climbingSide = undefined;
+          state.isMoving = false;
+          setAction("idle");
+        } else {
+          state.isMoving = true;
+        }
+        options.window.setPosition(
+          Math.round(state.position.x),
+          Math.round(state.position.y),
+        );
+        options.onStateChange(snapshot());
+        return;
+      }
+
       if (!target) {
         if (updateLookDirection()) {
           options.onStateChange(snapshot());

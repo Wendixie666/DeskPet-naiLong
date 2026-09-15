@@ -20,6 +20,11 @@ export class CharacterRegistry {
           throw new Error(`角色 ${config.id} 缺少点击动作 ${action} 的配置`);
         }
       }
+      for (const [name, action] of Object.entries(config.interactionActions ?? {})) {
+        if (!config.actions[action]) {
+          throw new Error(`角色 ${config.id} 缺少交互动作 ${name} 的配置`);
+        }
+      }
     }
     this.characters = new Map(configs.map((config) => [config.id, config]));
     this.defaultCharacterId = defaultCharacterId;

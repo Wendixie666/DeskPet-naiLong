@@ -32,9 +32,12 @@ export interface PetRuntime {
   click(): void;
   dispose(): void;
   dragBy(deltaX: number, deltaY: number): void;
+  endDrag(): void;
+  endPat(): void;
   getScale(): number;
   getSnapshot(): PetSnapshot;
   summon(target: Point): void;
+  startPat(): void;
 }
 
 export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
@@ -102,6 +105,14 @@ export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
       motion.dragBy(deltaX, deltaY);
     },
 
+    endDrag() {
+      motion.endDrag();
+    },
+
+    endPat() {
+      motion.endPat();
+    },
+
     getScale() {
       return scale;
     },
@@ -110,6 +121,10 @@ export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
 
     summon(target) {
       motion.summon(target);
+    },
+
+    startPat() {
+      motion.startPat();
     },
   };
 }
