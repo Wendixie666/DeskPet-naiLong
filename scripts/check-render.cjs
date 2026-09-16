@@ -46,6 +46,14 @@ app.whenReady().then(async () => {
     petScales: [0.75, 1, 1.25, 1.5],
     settings: next,
   }));
+  ipcMain.handle("ai-settings:get", () => ({
+    config: {
+      provider: "openai-compatible",
+      baseUrl: "https://api.openai.com/v1",
+      model: "",
+    },
+    hasApiKey: false,
+  }));
   ipcMain.handle("memo:list", () => []);
 
   const window = new BrowserWindow({

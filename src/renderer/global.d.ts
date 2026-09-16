@@ -1,4 +1,7 @@
 import type {
+  AiConfig,
+  AiConnectionTestResult,
+  AiSettingsSnapshot,
   AppTheme,
   AppSettings,
   SettingsSnapshot,
@@ -12,6 +15,14 @@ declare global {
     desktopSettings: {
       get(): Promise<SettingsSnapshot>;
       update(settings: AppSettings): Promise<SettingsSnapshot>;
+      getAiSettings(): Promise<AiSettingsSnapshot>;
+      updateAiSettings(config: AiConfig): Promise<AiSettingsSnapshot>;
+      saveApiKey(apiKey: string): Promise<AiSettingsSnapshot>;
+      removeApiKey(): Promise<AiSettingsSnapshot>;
+      testAiConnection(
+        config: AiConfig,
+        apiKey?: string,
+      ): Promise<AiConnectionTestResult>;
     };
     desktopMemo: {
       getTheme(): Promise<AppTheme>;

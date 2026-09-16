@@ -4,18 +4,28 @@ import {
   ipcMain,
   Menu,
   Notification,
+  safeStorage,
   screen,
 } from "electron";
 import path from "node:path";
 
 import { CharacterRegistry } from "../characters";
 import { naiwa } from "../characters/naiwa";
+import { createAiConfigStore, type AiConfigStore } from "../ai/ai-config";
+import {
+  createAiCredentialStore,
+  type AiCredentialStore,
+} from "../ai/ai-credential-store";
 import {
   constrainPosition,
   scaledSize,
 } from "./pet-window";
 import { openPetWindow, type PetWindowHandle } from "./pet-window-create";
 import { registerPetIpc } from "./ipc";
+import {
+  createAiSettingsIpcHandlers,
+  registerAiSettingsIpc,
+} from "./ai-settings-ipc";
 import { showSettingsWindow } from "./settings-window";
 import { notifyMemoTheme, showMemoWindow } from "./memo-window";
 import { registerMemoIpc, createMemoIpcHandlers } from "./memo-ipc";
@@ -55,6 +65,8 @@ let settingsManager: ReturnType<typeof createSettingsManager>;
 let keyboardActivityService: KeyboardActivityService | undefined;
 let todoStore: TodoStore;
 let reminderScheduler: ReminderScheduler;
+let aiConfigStore: AiConfigStore;
+let aiCredentialStore: AiCredentialStore;
 
 function bottomRightPosition(size: Size): Point {
   const { workArea } = screen.getPrimaryDisplay();
@@ -103,6 +115,15 @@ function showSystemReminder(todo: TodoItem): void {
       title: "奶蛙提醒你",
       body: todo.text,
     }).show();
+  }
+}
+
+function logAiStorageDiagnostics(): void {
+  if (process.platform !== "linux" || !safeStorage.isEncryptionAvailable()) {
+    return;
+  }
+  if (safeStorage.getSelectedStorageBackend() === "basic_text") {
+    console.info("[DIAG-ai] Linux safeStorage 使用低安全级别后端");
   }
 }
 
@@ -174,6 +195,14 @@ function registerIpc(): void {
     },
   });
   registerMemoIpc(ipcMain, createMemoIpcHandlers(todoStore));
+  registerAiSettingsIpc(
+    ipcMain,
+    createAiSettingsIpcHandlers(
+      aiConfigStore,
+      aiCredentialStore,
+      (url, init) => fetch(url, init),
+    ),
+  );
 }
 
 function createPetWindow(): void {
@@ -224,12 +253,18 @@ function saveLastPosition(): void {
 
 app.whenReady().then(() => {
   void logGpuDiagnostics();
+  logAiStorageDiagnostics();
   settingsManager = createSettingsManager(
     path.join(app.getPath("userData"), "settings.json"),
     (id) => registry.has(id),
     applySettings,
   );
   todoStore = createTodoStore(path.join(app.getPath("userData"), "todos.json"));
+  aiConfigStore = createAiConfigStore(path.join(app.getPath("userData"), "ai-config.json"));
+  aiCredentialStore = createAiCredentialStore(
+    path.join(app.getPath("userData"), "ai-api-key.bin"),
+    safeStorage,
+  );
   reminderScheduler = createReminderScheduler({
     store: todoStore,
     onReminder(todo) {

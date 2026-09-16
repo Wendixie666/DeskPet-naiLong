@@ -33,6 +33,7 @@ body {
   margin: 0;
   min-height: 100vh;
   background: var(--page-background);
+  overflow-y: auto;
 }
 
 main {
@@ -80,6 +81,33 @@ fieldset {
   padding: 12px 14px;
   border: 1px solid var(--fieldset-border-color);
   border-radius: 8px;
+}
+
+.ai-settings {
+  display: grid;
+  gap: 16px;
+}
+
+.ai-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.ai-actions button:last-child {
+  border-color: var(--border-color);
+  color: var(--text-color);
+  background: var(--surface-background);
+}
+
+#ai-status {
+  min-height: 18px;
+  margin: 0;
+  color: var(--muted-color);
+  font-size: 14px;
+}
+
+#ai-status.error {
+  color: #b3261e;
 }
 
 legend {

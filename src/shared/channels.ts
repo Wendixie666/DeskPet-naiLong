@@ -16,6 +16,14 @@ export const settingsChannels = {
   update: "settings:update",
 } as const;
 
+export const aiSettingsChannels = {
+  get: "ai-settings:get",
+  update: "ai-settings:update",
+  saveApiKey: "ai-settings:save-api-key",
+  removeApiKey: "ai-settings:remove-api-key",
+  test: "ai-settings:test",
+} as const;
+
 export const memoChannels = {
   list: "memo:list",
   create: "memo:create",

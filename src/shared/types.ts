@@ -109,6 +109,22 @@ export interface SettingsSnapshot {
   settings: AppSettings;
 }
 
+export interface AiConfig {
+  provider: "openai-compatible";
+  baseUrl: string;
+  model: string;
+}
+
+export interface AiSettingsSnapshot {
+  config: AiConfig;
+  hasApiKey: boolean;
+}
+
+export interface AiConnectionTestResult {
+  ok: boolean;
+  message: string;
+}
+
 export type TodoDeadlinePrecision = "date" | "date-time";
 
 export const DEFAULT_TODO_DATE_DEADLINE_TIME = "23:59";

@@ -11,9 +11,9 @@ export function showSettingsWindow(): void {
 
   settingsWindow = new BrowserWindow({
     width: 460,
-    height: 500,
+    height: 720,
     minWidth: 420,
-    minHeight: 460,
+    minHeight: 620,
     title: "桌宠设置",
     webPreferences: {
       contextIsolation: true,
