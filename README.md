@@ -10,7 +10,7 @@
 
 ### 环境要求
 
-- Node.js 22 或更新版本
+- Node.js 22 或更新版本111
 - npm
 - Windows、macOS 或 Linux X11/XWayland
 

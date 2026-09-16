@@ -27,3 +27,4 @@
 - 构建关键约束：`tsc -p tsconfig.renderer.json` 会把 renderer import 到的非 renderer 文件（preload/shared/pet）按 ES2022 重新输出，曾把 dist/preload 覆盖成 ESM 导致打包版全坏。现约定：pass1（CJS）exclude src/renderer，pass2 输出到独立目录 `dist/renderer-esm/`，HTML 引用该路径；build 脚本先清空 dist 防旧产物残留。
 - Electron 沙箱 preload 只能 require 内置模块，不能 require 相对路径文件；preload import 了 shared/channels 后必须 `sandbox: false`（保留 contextIsolation），pet 窗口、settings 窗口和 scripts/check-render.cjs 三处需保持一致。
 - renderer UI 不放常驻按钮，保持纯透明画布；退出入口只有右键菜单"退出"（直接 `app.quit()`），曾加过 UI 关闭按钮后按要求撤除（含 pet:quit 通道整链路）。
+- npm 11 的 allow-scripts 安全策略会阻断 `uiohook-napi` 的 install script（`node-gyp-build`/`node-gyp rebuild`），导致该包未安装、`require` 抛 MODULE_NOT_FOUND，桌面应用里表现为 `[DIAG-keyboard]` 不可用（Windows 上重启/重装后尤其容易出现）。解决：`npm approve-scripts uiohook-napi`（会把 `allowScripts` 字段写进 package.json），已批准后 `uiohook-napi@1.5.5` 自带 `prebuilds/win32-x64` 等预编译二进制，Electron 43 下可直接加载，无需 electron-rebuild。

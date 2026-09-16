@@ -31,12 +31,16 @@
       "!**/*.test.ts"
     ],
     "npmRebuild": false,
-    "asarUnpack": ["**/*.node"],
+    "asarUnpack": [
+      "**/*.node"
+    ],
     "mac": {
       "target": [
         {
           "target": "dmg",
-          "arch": ["universal"]
+          "arch": [
+            "universal"
+          ]
         }
       ],
       "category": "public.app-category.entertainment",
@@ -61,5 +65,8 @@
   },
   "dependencies": {
     "uiohook-napi": "1.5.5"
+  },
+  "allowScripts": {
+    "uiohook-napi@1.5.5": true
   }
 }
