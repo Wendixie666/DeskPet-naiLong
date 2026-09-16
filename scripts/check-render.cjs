@@ -54,6 +54,18 @@ app.whenReady().then(async () => {
     },
     hasApiKey: false,
   }));
+  ipcMain.handle("chat:get-state", () => ({
+    characterId: "naiwa",
+    messages: [],
+    generating: false,
+  }));
+  ipcMain.handle("chat:clear", () => ({
+    characterId: "naiwa",
+    messages: [],
+    generating: false,
+  }));
+  ipcMain.handle("chat:send", () => {});
+  ipcMain.on("chat:cancel", () => {});
   ipcMain.handle("memo:list", () => []);
 
   const window = new BrowserWindow({
@@ -160,6 +172,29 @@ app.whenReady().then(async () => {
     newTodoButton: document.querySelector("#new-todo").textContent,
   }))()`);
 
+  const chatWindow = new BrowserWindow({
+    width: 640,
+    height: 720,
+    show: false,
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      preload: path.join(projectRoot, "dist/preload/chat.js"),
+      sandbox: false,
+    },
+  });
+  chatWindow.webContents.on("console-message", (event) => {
+    if (event.level === "error") {
+      rendererErrors.push(event.message);
+    }
+  });
+  await chatWindow.loadFile(path.join(projectRoot, "src/renderer/chat.html"));
+  await new Promise((resolve) => setTimeout(resolve, 100));
+  const chatState = await chatWindow.webContents.executeJavaScript(`(() => ({
+    title: document.querySelector("h1").textContent,
+    sendButton: document.querySelector("#send-message").textContent,
+  }))()`);
+
   const reminderWindow = new BrowserWindow({
     width: 280,
     height: 88,
@@ -192,6 +227,7 @@ app.whenReady().then(async () => {
     rendererErrors,
     settingsState,
     memoState,
+    chatState,
     reminderState,
     visiblePixels,
     reminderVisiblePixels,
@@ -206,6 +242,8 @@ app.whenReady().then(async () => {
     || settingsState.characterOptions !== 1
     || settingsState.shortcut !== settings.summonShortcut
     || memoState.title !== "备忘录"
+    || chatState.title !== "和奶蛙聊聊天"
+    || chatState.sendButton !== "发送"
     || reminderState.hidden
     || reminderState.text !== "你「改论文」了吗？"
     || visiblePixels < 1_000

@@ -1,10 +1,5 @@
 import type {
-  AiConfig,
-  AiConnectionTestResult,
-  AiSettingsSnapshot,
   AppTheme,
-  AppSettings,
-  SettingsSnapshot,
   TodoDeadlinePrecision,
   TodoItem,
 } from "../shared/types";
@@ -12,18 +7,7 @@ import type {
 declare global {
   interface Window {
     desktopPet: typeof import("../preload/index").desktopPetBridge;
-    desktopSettings: {
-      get(): Promise<SettingsSnapshot>;
-      update(settings: AppSettings): Promise<SettingsSnapshot>;
-      getAiSettings(): Promise<AiSettingsSnapshot>;
-      updateAiSettings(config: AiConfig): Promise<AiSettingsSnapshot>;
-      saveApiKey(apiKey: string): Promise<AiSettingsSnapshot>;
-      removeApiKey(): Promise<AiSettingsSnapshot>;
-      testAiConnection(
-        config: AiConfig,
-        apiKey?: string,
-      ): Promise<AiConnectionTestResult>;
-    };
+    desktopSettings: typeof import("../preload/settings").desktopSettingsBridge;
     desktopMemo: {
       getTheme(): Promise<AppTheme>;
       onThemeChanged(listener: (theme: AppTheme) => void): () => void;
@@ -38,6 +22,7 @@ declare global {
       complete(id: string): Promise<TodoItem>;
       remove(id: string): Promise<void>;
     };
+    desktopChat: typeof import("../preload/chat").desktopChatBridge;
     desktopReminderOverlay: {
       click(): void;
       onHide(listener: () => void): void;

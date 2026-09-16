@@ -26,6 +26,7 @@
     "files": [
       "dist/**/*",
       "src/renderer/**/*",
+      "src/characters/personas/**/*",
       "素材/奶蛙/processed/**/*",
       "!**/*.processed.debug.png",
       "!**/*.test.ts"

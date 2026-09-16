@@ -4,26 +4,21 @@ import type {
   AiConfig,
   AiConnectionTestResult,
   AiSettingsSnapshot,
-  AppSettings,
+  SettingsSaveRequest,
+  SettingsSaveResult,
   SettingsSnapshot,
 } from "../shared/types";
 import { aiSettingsChannels, settingsChannels } from "../shared/channels.ts";
 
-contextBridge.exposeInMainWorld("desktopSettings", {
+export const desktopSettingsBridge = {
   get(): Promise<SettingsSnapshot> {
     return ipcRenderer.invoke(settingsChannels.get);
   },
-  update(settings: AppSettings): Promise<SettingsSnapshot> {
-    return ipcRenderer.invoke(settingsChannels.update, settings);
+  save(request: SettingsSaveRequest): Promise<SettingsSaveResult> {
+    return ipcRenderer.invoke(settingsChannels.save, request);
   },
   getAiSettings(): Promise<AiSettingsSnapshot> {
     return ipcRenderer.invoke(aiSettingsChannels.get);
-  },
-  updateAiSettings(config: AiConfig): Promise<AiSettingsSnapshot> {
-    return ipcRenderer.invoke(aiSettingsChannels.update, config);
-  },
-  saveApiKey(apiKey: string): Promise<AiSettingsSnapshot> {
-    return ipcRenderer.invoke(aiSettingsChannels.saveApiKey, apiKey);
   },
   removeApiKey(): Promise<AiSettingsSnapshot> {
     return ipcRenderer.invoke(aiSettingsChannels.removeApiKey);
@@ -34,4 +29,6 @@ contextBridge.exposeInMainWorld("desktopSettings", {
   ): Promise<AiConnectionTestResult> {
     return ipcRenderer.invoke(aiSettingsChannels.test, config, apiKey);
   },
-});
+};
+
+contextBridge.exposeInMainWorld("desktopSettings", desktopSettingsBridge);

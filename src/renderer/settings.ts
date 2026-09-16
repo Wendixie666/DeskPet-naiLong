@@ -3,6 +3,7 @@ import type {
   AiSettingsSnapshot,
   AppSettings,
   DefaultPosition,
+  SettingsSaveRequest,
   SettingsSnapshot,
 } from "../shared/types";
 
@@ -103,17 +104,29 @@ form.addEventListener("submit", async (event) => {
   statusElement.textContent = "正在保存…";
   try {
     const aiConfig = readAiConfig();
-    let aiSnapshot = currentAiSettings;
-    if (shouldSaveAiConfig(aiConfig) || aiApiKeyInput.value.trim()) {
-      aiSnapshot = await window.desktopSettings.updateAiSettings(aiConfig);
+    const shouldSaveAi = shouldSaveAiConfig(aiConfig) || aiApiKeyInput.value.trim().length > 0;
+    const request: SettingsSaveRequest = {
+      settings: next,
+      ...(shouldSaveAi
+        ? {
+          ai: {
+            config: aiConfig,
+            ...(aiApiKeyInput.value.trim()
+              ? { apiKey: aiApiKeyInput.value }
+              : {}),
+          },
+        }
+        : {}),
+    };
+    const result = await window.desktopSettings.save(request);
+    showSnapshot(result.settings);
+    showAiSnapshot(result.aiSettings);
+    statusElement.classList.toggle("error", !result.ok);
+    statusElement.textContent = result.message;
+    aiStatusElement.classList.toggle("error", !result.ok && result.saved.ai);
+    if (!result.ok && result.saved.ai) {
+      aiStatusElement.textContent = result.message;
     }
-    if (aiApiKeyInput.value.trim()) {
-      aiSnapshot = await window.desktopSettings.saveApiKey(aiApiKeyInput.value);
-    }
-    const snapshot = await window.desktopSettings.update(next);
-    showSnapshot(snapshot);
-    showAiSnapshot(aiSnapshot);
-    statusElement.textContent = "已保存";
   } catch (error) {
     statusElement.classList.add("error");
     statusElement.textContent = error instanceof Error

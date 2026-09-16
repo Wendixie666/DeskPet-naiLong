@@ -29,3 +29,5 @@
 - renderer UI 不放常驻按钮，保持纯透明画布；退出入口只有右键菜单"退出"（直接 `app.quit()`），曾加过 UI 关闭按钮后按要求撤除（含 pet:quit 通道整链路）。
 - npm 11 的 allow-scripts 安全策略会阻断 `uiohook-napi` 的 install script（`node-gyp-build`/`node-gyp rebuild`），导致该包未安装、`require` 抛 MODULE_NOT_FOUND，桌面应用里表现为 `[DIAG-keyboard]` 不可用（Windows 上重启/重装后尤其容易出现）。解决：`npm approve-scripts uiohook-napi`（会把 `allowScripts` 字段写进 package.json），已批准后 `uiohook-napi@1.5.5` 自带 `prebuilds/win32-x64` 等预编译二进制，Electron 43 下可直接加载，无需 electron-rebuild。
 - AI 第一阶段配置独立于 `AppSettings`：普通配置写入 `userData/ai-config.json`，API Key 通过 Electron `safeStorage` 写入 `userData/ai-api-key.bin`；设置 preload 只暴露 `hasApiKey`，测试连接由 main 进程发起。
+- 设置窗口的完整保存通过 `settings:save` 由 main 侧 `SettingsCoordinator` 编排；preload 的 `desktopSettings` 类型从 `desktopSettingsBridge` 推导，renderer 不再手写 bridge interface。
+- AI 第二、三阶段：`src/ai/chat-service.ts` 负责按当前角色重新拼接 Markdown 人设和维护内存多轮记录，`openai-compatible-provider.ts` 只负责 OpenAI-compatible SSE 流式请求；聊天请求仍只从 main 经 `chat:*` IPC 发出，preload 不暴露 API Key。人设文件位于 `src/characters/personas/`，打包资源需保留该目录；聊天窗口由 `main/chat-window.ts` 独立管理，桌宠右键工具箱提供“聊天”入口。

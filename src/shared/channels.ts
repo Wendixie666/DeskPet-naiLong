@@ -12,6 +12,7 @@ export const petChannels = {
 
 export const settingsChannels = {
   get: "settings:get",
+  save: "settings:save",
   themeChanged: "settings:theme-changed",
   update: "settings:update",
 } as const;
@@ -22,6 +23,16 @@ export const aiSettingsChannels = {
   saveApiKey: "ai-settings:save-api-key",
   removeApiKey: "ai-settings:remove-api-key",
   test: "ai-settings:test",
+} as const;
+
+export const chatChannels = {
+  getState: "chat:get-state",
+  send: "chat:send",
+  delta: "chat:delta",
+  done: "chat:done",
+  error: "chat:error",
+  clear: "chat:clear",
+  cancel: "chat:cancel",
 } as const;
 
 export const memoChannels = {

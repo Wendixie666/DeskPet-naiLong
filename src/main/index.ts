@@ -16,17 +16,24 @@ import {
   createAiCredentialStore,
   type AiCredentialStore,
 } from "../ai/ai-credential-store";
+import { createChatService, type ChatService } from "../ai/chat-service";
+import { OpenAiCompatibleProvider } from "../ai/openai-compatible-provider";
+import { createPersonaLoader } from "../ai/persona-loader";
 import {
   constrainPosition,
   scaledSize,
 } from "./pet-window";
 import { openPetWindow, type PetWindowHandle } from "./pet-window-create";
 import { registerPetIpc } from "./ipc";
+import { registerSettingsSaveIpc } from "./settings-save-ipc";
+import { createSettingsCoordinator } from "./settings-coordinator";
 import {
   createAiSettingsIpcHandlers,
   registerAiSettingsIpc,
 } from "./ai-settings-ipc";
 import { showSettingsWindow } from "./settings-window";
+import { setChatWindowCloseHandler, showChatWindow } from "./chat-window";
+import { createChatIpcHandlers, registerChatIpc, type ChatIpcHandlers } from "./chat-ipc";
 import { notifyMemoTheme, showMemoWindow } from "./memo-window";
 import { registerMemoIpc, createMemoIpcHandlers } from "./memo-ipc";
 import { createTodoStore, type TodoStore } from "./todo-store";
@@ -67,6 +74,8 @@ let todoStore: TodoStore;
 let reminderScheduler: ReminderScheduler;
 let aiConfigStore: AiConfigStore;
 let aiCredentialStore: AiCredentialStore;
+let chatService: ChatService;
+let chatIpcHandlers: ChatIpcHandlers;
 
 function bottomRightPosition(size: Size): Point {
   const { workArea } = screen.getPrimaryDisplay();
@@ -160,6 +169,10 @@ function showPetContextMenu(): void {
       label: "工具箱",
       submenu: [
         {
+          label: "聊天",
+          click: showChatWindow,
+        },
+        {
           label: "备忘录",
           click: showMemoWindow,
         },
@@ -195,14 +208,22 @@ function registerIpc(): void {
     },
   });
   registerMemoIpc(ipcMain, createMemoIpcHandlers(todoStore));
-  registerAiSettingsIpc(
+  const aiSettingsHandlers = createAiSettingsIpcHandlers(
+    aiConfigStore,
+    aiCredentialStore,
+    (url, init) => fetch(url, init),
+  );
+  registerAiSettingsIpc(ipcMain, aiSettingsHandlers);
+  registerSettingsSaveIpc(
     ipcMain,
-    createAiSettingsIpcHandlers(
-      aiConfigStore,
-      aiCredentialStore,
-      (url, init) => fetch(url, init),
+    createSettingsCoordinator(
+      settingsManager,
+      aiSettingsHandlers,
+      settingsSnapshot,
+      (snapshot) => notifyMemoTheme(snapshot.settings.theme),
     ),
   );
+  registerChatIpc(ipcMain, chatIpcHandlers);
 }
 
 function createPetWindow(): void {
@@ -265,6 +286,20 @@ app.whenReady().then(() => {
     path.join(app.getPath("userData"), "ai-api-key.bin"),
     safeStorage,
   );
+  chatService = createChatService({
+    getCharacter: (characterId) => registry.get(characterId),
+    getAiConfig: () => aiConfigStore.load(),
+    getApiKey: () => aiCredentialStore.read(),
+    loadPersona: (file) => createPersonaLoader(
+      path.join(app.getAppPath(), "src/characters/personas"),
+    ).load(file),
+    createProvider: (config, apiKey) => new OpenAiCompatibleProvider(config, apiKey),
+  });
+  chatIpcHandlers = createChatIpcHandlers(
+    chatService,
+    () => settingsManager.get().characterId,
+  );
+  setChatWindowCloseHandler(() => chatIpcHandlers.cancel());
   reminderScheduler = createReminderScheduler({
     store: todoStore,
     onReminder(todo) {

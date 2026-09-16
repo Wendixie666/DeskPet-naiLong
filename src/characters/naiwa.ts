@@ -17,6 +17,9 @@ export const naiwa: CharacterConfig = {
     pat: "pat",
     reminder: "reminder",
   },
+  persona: {
+    file: "naiwa.md",
+  },
   clickActions: ["wave", "heart", "egg", "poop", "turnHead"],
   trackingAction: "turnHead",
   actions: {

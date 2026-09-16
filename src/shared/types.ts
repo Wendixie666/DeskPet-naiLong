@@ -75,6 +75,9 @@ export interface CharacterConfig {
   id: string;
   interactionActions?: CharacterInteractionActions;
   name: string;
+  persona?: {
+    file: string;
+  };
   size: Size;
   speed: number;
   trackingAction?: string;
@@ -123,6 +126,40 @@ export interface AiSettingsSnapshot {
 export interface AiConnectionTestResult {
   ok: boolean;
   message: string;
+}
+
+export interface SettingsSaveRequest {
+  settings: AppSettings;
+  ai?: {
+    config: AiConfig;
+    apiKey?: string;
+  };
+}
+
+export interface SettingsSaveResult {
+  ok: boolean;
+  message: string;
+  saved: {
+    app: boolean;
+    ai: boolean;
+  };
+  settings: SettingsSnapshot;
+  aiSettings: AiSettingsSnapshot;
+}
+
+export type ChatMessageRole = "user" | "assistant";
+
+export interface ChatMessage {
+  id: string;
+  role: ChatMessageRole;
+  content: string;
+  createdAt: string;
+}
+
+export interface ChatState {
+  characterId: string;
+  messages: ChatMessage[];
+  generating: boolean;
 }
 
 export type TodoDeadlinePrecision = "date" | "date-time";

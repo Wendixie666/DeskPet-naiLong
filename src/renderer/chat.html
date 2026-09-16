@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>奶蛙聊天</title>
+    <link rel="stylesheet" href="./chat.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <div>
+          <p class="eyebrow">DESKPET AI</p>
+          <h1>和奶蛙聊聊天</h1>
+        </div>
+        <button id="clear-chat" class="quiet-button" type="button">清空记录</button>
+      </header>
+      <section id="messages" class="messages" aria-live="polite"></section>
+      <p id="empty-state" class="empty-state">跟奶蛙说点什么吧。</p>
+      <p id="status" class="status" role="status"></p>
+      <form id="chat-form">
+        <textarea
+          id="message-input"
+          rows="3"
+          placeholder="输入消息，按 Enter 发送…"
+          aria-label="消息"
+        ></textarea>
+        <div class="composer-actions">
+          <span class="hint">Shift + Enter 换行</span>
+          <div>
+            <button id="stop-generation" class="quiet-button" type="button" hidden>停止生成</button>
+            <button id="send-message" class="primary-button" type="submit">发送</button>
+          </div>
+        </div>
+      </form>
+    </main>
+    <script type="module" src="../../dist/renderer-esm/renderer/chat.js"></script>
+  </body>
+</html>
