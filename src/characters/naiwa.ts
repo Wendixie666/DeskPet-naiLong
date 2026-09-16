@@ -4,6 +4,10 @@ export const naiwa: CharacterConfig = {
   id: "naiwa",
   name: "奶蛙",
   assetRoot: "../../素材/奶蛙/processed",
+  chatUi: {
+    title: "和奶蛙聊聊天",
+    emptyState: "跟奶蛙说点什么吧",
+  },
   size: { width: 192, height: 208 },
   speed: 260,
   visual: {

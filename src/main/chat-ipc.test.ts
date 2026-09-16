@@ -7,7 +7,12 @@ import { createChatIpcHandlers, registerChatIpc } from "./chat-ipc.ts";
 
 test("聊天 IPC 转发流式增量并在完成后返回状态", async () => {
   const service = createChatService({
-    getCharacter: () => ({ id: "naiwa", name: "奶蛙", persona: { file: "naiwa.md" } }),
+    getCharacter: () => ({
+      chatUi: { title: "和奶蛙聊聊天", emptyState: "跟奶蛙说点什么吧" },
+      id: "naiwa",
+      name: "奶蛙",
+      persona: { file: "naiwa.md" },
+    }),
     getAiConfig: () => ({ provider: "openai-compatible", baseUrl: "https://example.com/v1", model: "model" }),
     getApiKey: () => "secret",
     loadPersona: () => "persona",
@@ -46,9 +51,19 @@ test("注册聊天 IPC 的全部通道", () => {
       listened.push(channel);
     },
   }, {
-    getState: () => ({ characterId: "naiwa", messages: [], generating: false }),
+    getState: () => ({
+      characterId: "naiwa",
+      chatUi: { title: "和奶蛙聊聊天", emptyState: "跟奶蛙说点什么吧" },
+      messages: [],
+      generating: false,
+    }),
     send: async () => {},
-    clear: () => ({ characterId: "naiwa", messages: [], generating: false }),
+    clear: () => ({
+      characterId: "naiwa",
+      chatUi: { title: "和奶蛙聊聊天", emptyState: "跟奶蛙说点什么吧" },
+      messages: [],
+      generating: false,
+    }),
     cancel: () => {},
   });
 

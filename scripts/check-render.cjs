@@ -56,11 +56,19 @@ app.whenReady().then(async () => {
   }));
   ipcMain.handle("chat:get-state", () => ({
     characterId: "naiwa",
+    chatUi: {
+      title: "和奶蛙聊聊天",
+      emptyState: "跟奶蛙说点什么吧",
+    },
     messages: [],
     generating: false,
   }));
   ipcMain.handle("chat:clear", () => ({
     characterId: "naiwa",
+    chatUi: {
+      title: "和奶蛙聊聊天",
+      emptyState: "跟奶蛙说点什么吧",
+    },
     messages: [],
     generating: false,
   }));
@@ -191,9 +199,12 @@ app.whenReady().then(async () => {
   await chatWindow.loadFile(path.join(projectRoot, "src/renderer/chat.html"));
   await new Promise((resolve) => setTimeout(resolve, 100));
   const chatState = await chatWindow.webContents.executeJavaScript(`(() => ({
+    emptyState: document.querySelector("#empty-state").textContent,
+    placeholder: document.querySelector("#message-input").getAttribute("placeholder"),
     title: document.querySelector("h1").textContent,
     sendButton: document.querySelector("#send-message").textContent,
   }))()`);
+  const chatWindowTitle = chatWindow.getTitle();
 
   const reminderWindow = new BrowserWindow({
     width: 280,
@@ -228,6 +239,7 @@ app.whenReady().then(async () => {
     settingsState,
     memoState,
     chatState,
+    chatWindowTitle,
     reminderState,
     visiblePixels,
     reminderVisiblePixels,
@@ -243,6 +255,9 @@ app.whenReady().then(async () => {
     || settingsState.shortcut !== settings.summonShortcut
     || memoState.title !== "备忘录"
     || chatState.title !== "和奶蛙聊聊天"
+    || chatWindowTitle !== "和奶蛙聊聊天"
+    || chatState.emptyState !== "跟奶蛙说点什么吧"
+    || chatState.placeholder !== "输入消息，按 Enter 发送…"
     || chatState.sendButton !== "发送"
     || reminderState.hidden
     || reminderState.text !== "你「改论文」了吗？"

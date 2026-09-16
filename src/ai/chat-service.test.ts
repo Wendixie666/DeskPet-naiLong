@@ -14,6 +14,7 @@ test("ChatService 每次请求都加入当前角色人设并保留多轮消息",
   };
   const service = createChatService({
     getCharacter: () => ({
+      chatUi: { title: "和奶蛙聊聊天", emptyState: "跟奶蛙说点什么吧" },
       id: "naiwa",
       name: "奶蛙",
       persona: { file: "naiwa.md" },
@@ -44,9 +45,39 @@ test("ChatService 每次请求都加入当前角色人设并保留多轮消息",
   assert.equal(service.getState("naiwa").messages.length, 4);
 });
 
+test("ChatService 返回当前角色的聊天 UI 配置", () => {
+  const service = createChatService({
+    getCharacter: (id) => ({
+      chatUi: id === "naiwa"
+        ? { title: "和奶蛙聊聊天", emptyState: "跟奶蛙说点什么吧" }
+        : { title: "和小猫聊聊天", emptyState: "叫小猫说句话吧" },
+      id,
+      name: id === "naiwa" ? "奶蛙" : "小猫",
+    }),
+    getAiConfig: () => ({ provider: "openai-compatible", baseUrl: "https://example.com/v1", model: "model" }),
+    getApiKey: () => "secret",
+    loadPersona: () => "persona",
+    createProvider: () => ({ async *chat() { yield "ok"; } }),
+  });
+
+  assert.deepEqual(service.getState("naiwa").chatUi, {
+    title: "和奶蛙聊聊天",
+    emptyState: "跟奶蛙说点什么吧",
+  });
+  assert.deepEqual(service.getState("cat").chatUi, {
+    title: "和小猫聊聊天",
+    emptyState: "叫小猫说句话吧",
+  });
+});
+
 test("ChatService 清空当前角色聊天记录并拒绝空消息", async () => {
   const service = createChatService({
-    getCharacter: () => ({ id: "naiwa", name: "奶蛙", persona: { file: "naiwa.md" } }),
+    getCharacter: () => ({
+      chatUi: { title: "和奶蛙聊聊天", emptyState: "跟奶蛙说点什么吧" },
+      id: "naiwa",
+      name: "奶蛙",
+      persona: { file: "naiwa.md" },
+    }),
     getAiConfig: () => ({ provider: "openai-compatible", baseUrl: "https://example.com/v1", model: "model" }),
     getApiKey: () => "secret",
     loadPersona: () => "persona",
@@ -61,7 +92,12 @@ test("ChatService 清空当前角色聊天记录并拒绝空消息", async () =>
 
 test("ChatService 停止生成时保留已经收到的部分回复", async () => {
   const service = createChatService({
-    getCharacter: () => ({ id: "naiwa", name: "奶蛙", persona: { file: "naiwa.md" } }),
+    getCharacter: () => ({
+      chatUi: { title: "和奶蛙聊聊天", emptyState: "跟奶蛙说点什么吧" },
+      id: "naiwa",
+      name: "奶蛙",
+      persona: { file: "naiwa.md" },
+    }),
     getAiConfig: () => ({ provider: "openai-compatible", baseUrl: "https://example.com/v1", model: "model" }),
     getApiKey: () => "secret",
     loadPersona: () => "persona",

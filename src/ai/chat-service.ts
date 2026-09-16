@@ -1,11 +1,18 @@
 import { randomUUID } from "node:crypto";
 
-import type { AiConfig, CharacterConfig, ChatMessage, ChatState } from "../shared/types.ts";
+import type {
+  AiConfig,
+  CharacterChatUi,
+  CharacterConfig,
+  ChatMessage,
+  ChatState,
+} from "../shared/types.ts";
 import type { AiProvider, AiMessage } from "./ai-provider.ts";
 
 export const MAX_CHAT_HISTORY = 30;
 
 interface ChatCharacter {
+  chatUi: CharacterChatUi;
   id: string;
   name: string;
   persona?: CharacterConfig["persona"];
@@ -65,8 +72,10 @@ export function createChatService(options: ChatServiceOptions): ChatService {
 
   function getState(nextCharacterId: string): ChatState {
     useCharacter(nextCharacterId);
+    const character = options.getCharacter(nextCharacterId);
     return {
       characterId: nextCharacterId,
+      chatUi: character.chatUi,
       messages: [...messages],
       generating,
     };

@@ -19,7 +19,6 @@ export function showChatWindow(): void {
     height: 720,
     minWidth: 480,
     minHeight: 500,
-    title: "奶蛙聊天",
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

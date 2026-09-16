@@ -1,6 +1,7 @@
 import type { AppTheme, ChatMessage, ChatState } from "../shared/types";
 
 const messagesElement = document.querySelector<HTMLElement>("#messages")!;
+const titleElement = document.querySelector<HTMLElement>("#chat-title")!;
 const emptyStateElement = document.querySelector<HTMLElement>("#empty-state")!;
 const statusElement = document.querySelector<HTMLElement>("#status")!;
 const form = document.querySelector<HTMLFormElement>("#chat-form")!;
@@ -11,6 +12,10 @@ const clearButton = document.querySelector<HTMLButtonElement>("#clear-chat")!;
 
 let state: ChatState = {
   characterId: "",
+  chatUi: {
+    title: "角色聊天",
+    emptyState: "暂无聊天记录",
+  },
   messages: [],
   generating: false,
 };
@@ -26,6 +31,12 @@ function showStatus(message: string, isError = false): void {
   statusElement.textContent = message;
 }
 
+function applyCharacterUi(): void {
+  titleElement.textContent = state.chatUi.title;
+  document.title = state.chatUi.title;
+  emptyStateElement.textContent = state.chatUi.emptyState;
+}
+
 function renderMessage(item: ChatMessage): HTMLElement {
   const element = document.createElement("article");
   element.className = `message ${item.role}`;
@@ -34,6 +45,7 @@ function renderMessage(item: ChatMessage): HTMLElement {
 }
 
 function render(): void {
+  applyCharacterUi();
   messagesElement.replaceChildren(...state.messages.map(renderMessage));
   if (streamingContent) {
     const streamingMessage = document.createElement("article");

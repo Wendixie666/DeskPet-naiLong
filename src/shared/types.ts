@@ -34,6 +34,11 @@ export interface CharacterInteractionActions {
   reminder?: string;
 }
 
+export interface CharacterChatUi {
+  emptyState: string;
+  title: string;
+}
+
 export interface PetState {
   actionSequence: number;
   action: PetAction;
@@ -71,6 +76,7 @@ export type CharacterAction = ImageAction | SpriteAction | DirectionalSpriteActi
 export interface CharacterConfig {
   actions: Record<string, CharacterAction>;
   assetRoot: string;
+  chatUi: CharacterChatUi;
   clickActions: string[];
   id: string;
   interactionActions?: CharacterInteractionActions;
@@ -158,6 +164,7 @@ export interface ChatMessage {
 
 export interface ChatState {
   characterId: string;
+  chatUi: CharacterChatUi;
   messages: ChatMessage[];
   generating: boolean;
 }
