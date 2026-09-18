@@ -34,6 +34,8 @@ export interface PetMotion {
   dragBy(deltaX: number, deltaY: number): void;
   endDrag(): void;
   endPat(): void;
+  enterWindowPerch(position: Point): void;
+  exitWindowPerch(): void;
   getState(): PetState;
   keyboardActivity(): void;
   summon(target: Point): void;
@@ -105,6 +107,11 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
     state.isMoving = false;
   }
 
+  function isWindowPerched(): boolean {
+    return options.character.interactionActions?.windowPerch !== undefined
+      && state.action === options.character.interactionActions.windowPerch;
+  }
+
   function resumeAmbientAction(): void {
     setAction(typingActivityRemainingMs > 0 ? "typing" : "idle");
   }
@@ -171,6 +178,9 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
 
   return {
     click() {
+      if (isWindowPerched()) {
+        return;
+      }
       if (climbingSide) {
         stopMovement();
       }
@@ -217,11 +227,38 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
       options.onStateChange(snapshot());
     },
 
+    enterWindowPerch(position) {
+      const action = options.character.interactionActions?.windowPerch;
+      if (!action) {
+        return;
+      }
+      stopMovement();
+      reminderPending = false;
+      typingActivityRemainingMs = 0;
+      state.position = { ...position };
+      state.isMoving = false;
+      setAction(action);
+      options.window.setPosition(position.x, position.y);
+      options.onStateChange(snapshot());
+    },
+
+    exitWindowPerch() {
+      if (!isWindowPerched()) {
+        return;
+      }
+      stopMovement();
+      setAction("idle");
+      options.onStateChange(snapshot());
+    },
+
     getState() {
       return snapshot();
     },
 
     keyboardActivity() {
+      if (isWindowPerched()) {
+        return;
+      }
       if (state.action === options.character.interactionActions?.reminder) {
         return;
       }
@@ -241,6 +278,11 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
     },
 
     summon(targetPoint) {
+      if (isWindowPerched()) {
+        stopMovement();
+        setAction("idle");
+        options.onStateChange(snapshot());
+      }
       stopMovement();
       const bounds = options.window.getBounds();
       const footAnchor = scaledFootAnchor(options.character, options.scale);
@@ -260,6 +302,9 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
     },
 
     startPat() {
+      if (isWindowPerched()) {
+        return;
+      }
       const action = options.character.interactionActions?.pat;
       if (!action) {
         return;
@@ -270,6 +315,9 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
     },
 
     triggerReminder() {
+      if (isWindowPerched()) {
+        return false;
+      }
       const action = options.character.interactionActions?.reminder;
       if (!action || state.action === action || reminderPending) {
         return false;
@@ -284,6 +332,9 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
     },
 
     endReminder() {
+      if (isWindowPerched()) {
+        return;
+      }
       if (state.action !== options.character.interactionActions?.reminder) {
         return;
       }
@@ -294,6 +345,9 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
     },
 
     tick(deltaMs) {
+      if (isWindowPerched()) {
+        return;
+      }
       typingActivityRemainingMs = Math.max(
         typingActivityRemainingMs - deltaMs,
         0,

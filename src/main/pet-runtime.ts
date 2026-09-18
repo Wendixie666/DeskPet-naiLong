@@ -4,10 +4,18 @@ import type {
   PetSnapshot,
   PetState,
   Point,
+  SystemWindow,
   TodoItem,
 } from "../shared/types";
+import { scaledFootAnchor } from "../pet/geometry.ts";
 import { createPetMotion, type PetMotion } from "../pet/motion.ts";
+import {
+  findWindowPerchTarget,
+  sameWindowBounds,
+  windowPerchPosition,
+} from "../pet/window-perch.ts";
 import { resizePetWindow } from "./pet-window.ts";
+import type { WindowQuery } from "./window-query.ts";
 
 export interface PetRuntimeWindow {
   getBounds(): Bounds;
@@ -26,6 +34,7 @@ interface PetRuntimeOptions {
   onStateChange(state: PetState): void;
   scale: number;
   tickMs?: number;
+  windowQuery?: WindowQuery;
   window: PetRuntimeWindow;
 }
 
@@ -46,6 +55,7 @@ export interface PetRuntime {
 }
 
 export const REMINDER_DISPLAY_DURATION_MS = 7_000;
+export const WINDOW_PERCH_CHECK_INTERVAL_MS = 150;
 
 export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
   let character = options.character;
@@ -54,6 +64,9 @@ export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
   let pendingReminder: TodoItem | undefined;
   let activeReminder: TodoItem | undefined;
   let reminderTimer: ReturnType<typeof setTimeout> | undefined;
+  let windowPerchTarget: SystemWindow | undefined;
+  let windowPerchTimer: ReturnType<typeof setInterval> | undefined;
+  let dragReleaseRequest = 0;
 
   function notifyMotionStateChange(state: PetState): void {
     const reminderAction = character.interactionActions?.reminder;
@@ -92,6 +105,67 @@ export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
 
   configure(options.initialPosition);
 
+  function stopWindowPerchMonitor(): void {
+    if (windowPerchTimer !== undefined) {
+      clearInterval(windowPerchTimer);
+      windowPerchTimer = undefined;
+    }
+  }
+
+  function exitWindowPerch(): void {
+    if (!windowPerchTarget) {
+      return;
+    }
+    windowPerchTarget = undefined;
+    stopWindowPerchMonitor();
+    motion.exitWindowPerch();
+  }
+
+  async function checkWindowPerch(): Promise<void> {
+    const target = windowPerchTarget;
+    if (!target || !options.windowQuery) {
+      return;
+    }
+    try {
+      const current = await options.windowQuery.getWindowBounds(target.id);
+      if (!current
+        || current.isMinimized
+        || !current.isOrdinary
+        || !sameWindowBounds(current.bounds, target.bounds)) {
+        exitWindowPerch();
+      }
+    } catch {
+      exitWindowPerch();
+    }
+  }
+
+  function enterWindowPerch(target: SystemWindow): void {
+    const perchAnchorY = character.visual.perchAnchorY;
+    const perchAction = character.interactionActions?.windowPerch;
+    if (!perchAction || perchAnchorY === undefined) {
+      motion.endDrag();
+      return;
+    }
+    const petBounds = options.window.getBounds();
+    const position = windowPerchPosition(
+      target.bounds,
+      { width: petBounds.width, height: petBounds.height },
+      scale,
+      perchAnchorY,
+    );
+    windowPerchTarget = {
+      ...target,
+      bounds: { ...target.bounds },
+    };
+    motion.enterWindowPerch(position);
+    stopWindowPerchMonitor();
+    if (options.windowQuery) {
+      windowPerchTimer = setInterval(() => {
+        void checkWindowPerch();
+      }, WINDOW_PERCH_CHECK_INTERVAL_MS);
+    }
+  }
+
   function interruptReminder(): void {
     if (!activeReminder) {
       return;
@@ -118,6 +192,8 @@ export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
         return;
       }
 
+      dragReleaseRequest += 1;
+      exitWindowPerch();
       const position = resizePetWindow(
         options.window,
         character,
@@ -138,6 +214,9 @@ export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
     },
 
     dispose() {
+      dragReleaseRequest += 1;
+      exitWindowPerch();
+      stopWindowPerchMonitor();
       if (animationTimer !== undefined) {
         clearInterval(animationTimer);
       }
@@ -146,12 +225,46 @@ export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
     },
 
     dragBy(deltaX, deltaY) {
+      dragReleaseRequest += 1;
+      exitWindowPerch();
       interruptReminder();
       motion.dragBy(deltaX, deltaY);
     },
 
     endDrag() {
-      motion.endDrag();
+      const dragAction = character.interactionActions?.drag;
+      if (!dragAction || motion.getState().action !== dragAction) {
+        return;
+      }
+      const request = ++dragReleaseRequest;
+      const query = options.windowQuery;
+      const perchAnchorY = character.visual.perchAnchorY;
+      if (!query || !character.interactionActions?.windowPerch || perchAnchorY === undefined) {
+        motion.endDrag();
+        return;
+      }
+      const petBounds = options.window.getBounds();
+      void query.listWindows().then((windows) => {
+        if (request !== dragReleaseRequest
+          || motion.getState().action !== dragAction) {
+          return;
+        }
+        const target = findWindowPerchTarget(
+          petBounds,
+          scaledFootAnchor(character, scale),
+          windows,
+        );
+        if (target) {
+          enterWindowPerch(target);
+          return;
+        }
+        motion.endDrag();
+      }).catch(() => {
+        if (request === dragReleaseRequest
+          && motion.getState().action === dragAction) {
+          motion.endDrag();
+        }
+      });
     },
 
     endPat() {
@@ -169,6 +282,8 @@ export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
     },
 
     summon(target) {
+      dragReleaseRequest += 1;
+      exitWindowPerch();
       interruptReminder();
       motion.summon(target);
     },

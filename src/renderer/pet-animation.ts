@@ -93,6 +93,7 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
   function visualPlacement(
     sourceWidth: number,
     sourceHeight: number,
+    action: CharacterAction,
     adjustment: VisualAdjustment = {},
   ) {
     const adjustmentScale = adjustment.scale ?? 1;
@@ -101,7 +102,9 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
     return {
       scale,
       x: character.visual.footAnchor.x - sourceWidth / 2 * scale + offset.x,
-      y: character.visual.footAnchor.y - sourceHeight * scale + offset.y,
+      y: action.anchor === "perch"
+        ? offset.y
+        : character.visual.footAnchor.y - sourceHeight * scale + offset.y,
     };
   }
 
@@ -112,7 +115,12 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
   ): void {
     const frameCount = action.kind === "sprite" ? action.frameCount : 1;
     const sourceWidth = source.naturalWidth / frameCount;
-    const placement = visualPlacement(sourceWidth, source.naturalHeight, action.adjustment);
+    const placement = visualPlacement(
+      sourceWidth,
+      source.naturalHeight,
+      action,
+      action.adjustment,
+    );
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.drawImage(
       source,
@@ -174,7 +182,12 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
   ): void {
     const source = sources[frame.assetIndex];
     const sourceWidth = source.naturalWidth / action.frameCount;
-    const placement = visualPlacement(sourceWidth, source.naturalHeight, action.adjustment);
+    const placement = visualPlacement(
+      sourceWidth,
+      source.naturalHeight,
+      action,
+      action.adjustment,
+    );
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.save();
     if (frame.mirrored) {

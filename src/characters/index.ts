@@ -28,6 +28,10 @@ export class CharacterRegistry {
           throw new Error(`角色 ${config.id} 缺少交互动作 ${name} 的配置`);
         }
       }
+      if (config.interactionActions?.windowPerch
+        && config.visual.perchAnchorY === undefined) {
+        throw new Error(`角色 ${config.id} 缺少窗口停靠锚点`);
+      }
       for (const [name, action] of Object.entries(config.actions)) {
         if (action.kind === "sprite"
           && action.holdFrameIndex !== undefined
