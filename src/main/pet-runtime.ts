@@ -7,7 +7,6 @@ import type {
   SystemWindow,
   TodoItem,
 } from "../shared/types";
-import { scaledFootAnchor } from "../pet/geometry.ts";
 import { createPetMotion, type PetMotion } from "../pet/motion.ts";
 import {
   findWindowPerchTarget,
@@ -243,15 +242,14 @@ export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
         motion.endDrag();
         return;
       }
-      const petBounds = options.window.getBounds();
+      const releasePoint = options.cursorPosition();
       void query.listWindows().then((windows) => {
         if (request !== dragReleaseRequest
           || motion.getState().action !== dragAction) {
           return;
         }
         const target = findWindowPerchTarget(
-          petBounds,
-          scaledFootAnchor(character, scale),
+          releasePoint,
           windows,
         );
         if (target) {

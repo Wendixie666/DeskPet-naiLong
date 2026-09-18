@@ -9,8 +9,7 @@ import {
 
 test("窗口顶部停靠只选择普通窗口范围内最近的候选", () => {
   const target = findWindowPerchTarget(
-    { x: 300, y: 180, width: 192, height: 208 },
-    { x: 96, y: 202 },
+    { x: 396, y: 338 },
     [
       {
         id: "far",
@@ -20,7 +19,7 @@ test("窗口顶部停靠只选择普通窗口范围内最近的候选", () => {
       },
       {
         id: "near",
-        bounds: { x: 250, y: 400, width: 800, height: 600 },
+        bounds: { x: 250, y: 330, width: 800, height: 600 },
         isOrdinary: true,
         isMinimized: false,
       },

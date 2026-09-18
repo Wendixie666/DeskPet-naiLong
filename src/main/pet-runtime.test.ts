@@ -45,10 +45,11 @@ function createRuntime(
   snapshots: PetSnapshot[],
   onReminderChange?: (todo?: TodoItem) => void,
   windowQuery?: WindowQuery,
+  cursorPosition: Point = { x: 0, y: 0 },
 ) {
   return createPetRuntime({
     character: naiwa,
-    cursorPosition: () => ({ x: 0, y: 0 }),
+    cursorPosition: () => cursorPosition,
     initialPosition: { x: 100, y: 200 },
     onSnapshotChange(snapshot) {
       snapshots.push(snapshot);
@@ -211,7 +212,13 @@ test("拖拽释放在窗口顶部进入 windowPerch，目标 bounds 改变后退
   };
   const query = createWindowQuery(target);
   const runtimeWindow = createWindow({ x: 300, y: 180 });
-  const runtime = createRuntime(runtimeWindow, [], undefined, query.query);
+  const runtime = createRuntime(
+    runtimeWindow,
+    [],
+    undefined,
+    query.query,
+    { x: 396, y: 382 },
+  );
 
   runtime.dragBy(0, 0);
   runtime.endDrag();
@@ -235,6 +242,30 @@ test("拖拽释放在窗口顶部进入 windowPerch，目标 bounds 改变后退
   assert.equal(query.boundsCalls, 1);
 });
 
+test("拖拽释放使用鼠标位置判断窗口顶部，而不是桌宠脚部位置", async () => {
+  const target: SystemWindow = {
+    id: "window-release-point",
+    bounds: { x: 250, y: 330, width: 800, height: 600 },
+    isMinimized: false,
+    isOrdinary: true,
+  };
+  const query = createWindowQuery(target);
+  const runtime = createRuntime(
+    createWindow({ x: 300, y: 180 }),
+    [],
+    undefined,
+    query.query,
+    { x: 400, y: 338 },
+  );
+
+  runtime.dragBy(0, 0);
+  runtime.endDrag();
+  await Promise.resolve();
+
+  assert.equal(runtime.getSnapshot().state.action, "windowPerch");
+  runtime.dispose();
+});
+
 test("用户再次拖动停靠桌宠时立即退出 windowPerch", async () => {
   const target: SystemWindow = {
     id: "window-2",
@@ -248,6 +279,7 @@ test("用户再次拖动停靠桌宠时立即退出 windowPerch", async () => {
     [],
     undefined,
     query.query,
+    { x: 396, y: 382 },
   );
 
   runtime.dragBy(0, 0);

@@ -3,21 +3,16 @@ import type { Bounds, Point, Size, SystemWindow } from "../shared/types";
 export const WINDOW_PERCH_SNAP_DISTANCE = 32;
 
 export function findWindowPerchTarget(
-  petBounds: Bounds,
-  footAnchor: Point,
+  referencePoint: Point,
   windows: SystemWindow[],
 ): SystemWindow | undefined {
-  const reference = {
-    x: petBounds.x + footAnchor.x,
-    y: petBounds.y + footAnchor.y,
-  };
   return windows
     .filter((candidate) => candidate.isOrdinary && !candidate.isMinimized)
-    .filter((candidate) => reference.x >= candidate.bounds.x)
-    .filter((candidate) => reference.x <= candidate.bounds.x + candidate.bounds.width)
+    .filter((candidate) => referencePoint.x >= candidate.bounds.x)
+    .filter((candidate) => referencePoint.x <= candidate.bounds.x + candidate.bounds.width)
     .map((candidate) => ({
       candidate,
-      distance: Math.abs(reference.y - candidate.bounds.y),
+      distance: Math.abs(referencePoint.y - candidate.bounds.y),
     }))
     .filter(({ distance }) => distance <= WINDOW_PERCH_SNAP_DISTANCE)
     .sort((left, right) => left.distance - right.distance)
