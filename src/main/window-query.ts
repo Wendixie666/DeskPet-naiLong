@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import * as childProcess from "node:child_process";
 
 import type { SystemWindow } from "../shared/types";
 
@@ -8,14 +8,17 @@ export interface WindowQuery {
 }
 
 interface WindowQueryOptions {
+  commandRunner?: CommandRunner;
   ownApplicationName?: string;
   ownProcessId?: number;
   ownWindowId?: string;
 }
 
+type CommandRunner = (command: string, args: string[]) => Promise<string>;
+
 function runCommand(command: string, args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
-    execFile(command, args, { maxBuffer: 2 * 1024 * 1024 }, (error, stdout) => {
+    childProcess.execFile(command, args, { maxBuffer: 2 * 1024 * 1024 }, (error, stdout) => {
       if (error) {
         reject(error);
         return;
@@ -168,26 +171,52 @@ async function listWindowsOnMac(applicationName: string): Promise<SystemWindow[]
 
 function isOrdinaryLinuxWindow(windowClass: string, title: string): boolean {
   return !`${windowClass} ${title}`.match(
-    /desktop|panel|dock|taskbar|plasmashell|gnome-shell|xfdesktop|polybar|waybar|tint2/i,
+    /^desktop(?:[.\s]|$)|panel|dock|taskbar|plasmashell|gnome-shell|xfdesktop|polybar|waybar|tint2/i,
   );
 }
 
-async function listWindowsOnLinux(ownWindowId?: string): Promise<SystemWindow[]> {
-  const output = await runCommand("wmctrl", ["-lGx"]);
+export function normalizeX11WindowId(id: string): string {
+  const value = id.trim().toLowerCase();
+  if (!/^0x[0-9a-f]+$/.test(value)) {
+    return value;
+  }
+  return `0x${BigInt(value).toString(16)}`;
+}
+
+async function listWindowsOnLinux(
+  ownWindowId: string | undefined,
+  commandRunner: CommandRunner,
+): Promise<SystemWindow[]> {
+  const output = await commandRunner("wmctrl", ["-lGx"]);
+  const normalizedOwnWindowId = ownWindowId === undefined
+    ? undefined
+    : normalizeX11WindowId(ownWindowId);
+  console.debug("[DEBUG-window-perch] Linux 窗口查询自身 ID", {
+    ownWindowId,
+    normalizedOwnWindowId,
+  });
   return output.trim().split("\n").filter(Boolean).map((line) => {
     const parts = line.trim().split(/\s+/);
     const [id, _desktop, x, y, width, height, windowClass] = parts;
-    const title = parts.slice(8).join(" ");
+    const normalizedId = normalizeX11WindowId(id);
+    const bounds = {
+      x: Number(x),
+      y: Number(y),
+      width: Number(width),
+      height: Number(height),
+    };
+    const title = parts.slice(7).join(" ");
+    console.debug("[DEBUG-window-perch] wmctrl 候选窗口", {
+      rawId: id,
+      id: normalizedId,
+      bounds,
+    });
     return {
-      id,
-      bounds: {
-        x: Number(x),
-        y: Number(y),
-        width: Number(width),
-        height: Number(height),
-      },
+      id: normalizedId,
+      bounds,
       isMinimized: false,
-      isOrdinary: id !== ownWindowId && isOrdinaryLinuxWindow(windowClass, title),
+      isOrdinary: normalizedId !== normalizedOwnWindowId
+        && isOrdinaryLinuxWindow(windowClass, title),
     };
   });
 }
@@ -195,14 +224,21 @@ async function listWindowsOnLinux(ownWindowId?: string): Promise<SystemWindow[]>
 async function getLinuxWindow(
   id: string,
   ownWindowId?: string,
+  commandRunner: CommandRunner = runCommand,
 ): Promise<SystemWindow | undefined> {
-  const windows = await listWindowsOnLinux(ownWindowId);
-  const target = windows.find((window) => window.id === id);
+  const windows = await listWindowsOnLinux(ownWindowId, commandRunner);
+  const normalizedId = normalizeX11WindowId(id);
+  const target = windows.find((window) => window.id === normalizedId);
   if (!target || !target.isOrdinary) {
     return undefined;
   }
   try {
-    const state = await runCommand("xprop", ["-id", id, "_NET_WM_STATE", "_NET_WM_WINDOW_TYPE"]);
+    const state = await commandRunner("xprop", [
+      "-id",
+      normalizedId,
+      "_NET_WM_STATE",
+      "_NET_WM_WINDOW_TYPE",
+    ]);
     if (state.includes("_NET_WM_STATE_HIDDEN")
       || !state.includes("_NET_WM_WINDOW_TYPE_NORMAL")) {
       return undefined;
@@ -220,13 +256,17 @@ export function nativeWindowId(window: {
     return undefined;
   }
   try {
-    return `0x${window.getNativeWindowHandle().readUInt32LE(0).toString(16)}`;
+    return normalizeX11WindowId(
+      `0x${window.getNativeWindowHandle().readUInt32LE(0).toString(16)}`,
+    );
   } catch {
     return undefined;
   }
 }
 
 export function createSystemWindowQuery(options: WindowQueryOptions): WindowQuery {
+  const commandRunner = options.commandRunner ?? runCommand;
+
   async function listWindows(): Promise<SystemWindow[]> {
     try {
       if (process.platform === "win32" && options.ownProcessId !== undefined) {
@@ -236,7 +276,7 @@ export function createSystemWindowQuery(options: WindowQueryOptions): WindowQuer
         return await listWindowsOnMac(options.ownApplicationName);
       }
       if (process.platform === "linux") {
-        return await listWindowsOnLinux(options.ownWindowId);
+        return await listWindowsOnLinux(options.ownWindowId, commandRunner);
       }
     } catch {
       return [];
@@ -249,7 +289,7 @@ export function createSystemWindowQuery(options: WindowQueryOptions): WindowQuer
     async getWindowBounds(id) {
       try {
         if (process.platform === "linux") {
-          return await getLinuxWindow(id, options.ownWindowId);
+          return await getLinuxWindow(id, options.ownWindowId, commandRunner);
         }
         return (await listWindows()).find((window) => window.id === id);
       } catch {

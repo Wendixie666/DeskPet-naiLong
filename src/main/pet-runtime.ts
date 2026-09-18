@@ -9,6 +9,7 @@ import type {
 } from "../shared/types";
 import { createPetMotion, type PetMotion } from "../pet/motion.ts";
 import {
+  WINDOW_PERCH_SNAP_DISTANCE,
   findWindowPerchTarget,
   sameWindowBounds,
   windowPerchPosition,
@@ -243,15 +244,30 @@ export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
         return;
       }
       const releasePoint = options.cursorPosition();
+      console.debug("[DEBUG-window-perch] 松手时鼠标屏幕坐标", releasePoint);
       void query.listWindows().then((windows) => {
         if (request !== dragReleaseRequest
           || motion.getState().action !== dragAction) {
           return;
         }
+        console.debug("[DEBUG-window-perch] perch 候选判定", windows.map((candidate) => ({
+          id: candidate.id,
+          bounds: candidate.bounds,
+          isOrdinary: candidate.isOrdinary,
+          isMinimized: candidate.isMinimized,
+          xInRange: releasePoint.x >= candidate.bounds.x
+            && releasePoint.x <= candidate.bounds.x + candidate.bounds.width,
+          yDistance: Math.abs(releasePoint.y - candidate.bounds.y),
+          withinSnapDistance: Math.abs(releasePoint.y - candidate.bounds.y)
+            <= WINDOW_PERCH_SNAP_DISTANCE,
+        })));
         const target = findWindowPerchTarget(
           releasePoint,
           windows,
         );
+        console.debug("[DEBUG-window-perch] 最终找到的 perch target", target
+          ? { id: target.id, bounds: target.bounds }
+          : undefined);
         if (target) {
           enterWindowPerch(target);
           return;
