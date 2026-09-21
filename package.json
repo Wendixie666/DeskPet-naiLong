@@ -28,6 +28,7 @@
       "src/renderer/**/*",
       "src/characters/personas/**/*",
       "素材/奶蛙/processed/**/*",
+      "素材/噜噜/**/*",
       "!**/*.processed.debug.png",
       "!**/*.test.ts"
     ],

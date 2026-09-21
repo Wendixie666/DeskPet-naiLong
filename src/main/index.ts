@@ -10,6 +10,7 @@ import {
 import path from "node:path";
 
 import { CharacterRegistry } from "../characters";
+import { lulu } from "../characters/lulu";
 import { naiwa } from "../characters/naiwa";
 import { createAiConfigStore, type AiConfigStore } from "../ai/ai-config";
 import {
@@ -64,7 +65,7 @@ if (process.platform === "darwin") {
   app.dock?.hide();
 }
 
-const registry = new CharacterRegistry([naiwa], naiwa.id);
+const registry = new CharacterRegistry([naiwa, lulu], naiwa.id);
 const shortcuts = createShortcutManager(globalShortcut, summonAtCursor);
 
 let handle: PetWindowHandle | undefined;

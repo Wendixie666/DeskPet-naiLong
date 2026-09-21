@@ -34,3 +34,4 @@
 - 聊天页面的角色差异通过 `CharacterConfig.chatUi` 和 `ChatState.chatUi` 表达；当前只配置标题与空状态文案，`renderer/chat.ts` 根据状态更新页面标题、窗口标题和空状态，输入框 placeholder 保持通用。
 - 窗口顶部停靠由 `PetRuntime` 在拖拽释放后通过 `main/window-query` 查询系统窗口；停靠候选使用主进程提供的松手时鼠标屏幕坐标，不使用桌宠脚部锚点，`pet/window-perch` 负责候选判断、边界比较和停靠位置，`PetMotion` 只管理 `windowPerch` 动作门控。目标窗口 bounds 变化、关闭、最小化或用户再次拖动时，runtime 清理 150ms 监测 interval 并恢复 idle。
 - 角色可通过 `CharacterInteractionActions.windowPerch`、`CharacterVisual.perchAnchorY` 和动作的 `anchor: "perch"` 提供停靠动画与锚点；当前奶蛙使用 5 帧 `坐姿.processed.png`，原始素材仍放在 `素材/奶蛙/坐姿.png`。
+- Lulu 已通过 `src/characters/lulu.ts` 接入，使用 `素材/噜噜/` 下的原始素材提供 idle、walk、wave、drag、typing 基础动作；当前未配置提醒、转头或窗口停靠专属动作，打包清单需包含 `素材/噜噜/**/*`。
