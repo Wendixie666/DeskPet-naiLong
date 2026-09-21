@@ -80,6 +80,38 @@ class PreprocessSpriteTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "无法被帧数.*等分"):
             MODULE.grid_frame_ranges(7, 2)
 
+    def test_lulu_motion_sheets_align_all_frames_to_the_bottom(self) -> None:
+        source_root = SCRIPT_PATH.parent.parent / "素材/噜噜"
+        cases = [("跑步.png", 9), ("打招呼.png", 6)]
+
+        with tempfile.TemporaryDirectory() as directory:
+            output_root = Path(directory)
+            for name, frame_count in cases:
+                output = output_root / f"{name}.processed.png"
+                MODULE.preprocess(
+                    source_root / name,
+                    output,
+                    frame_count,
+                    output.with_suffix(".debug.png"),
+                )
+
+                with Image.open(output) as result:
+                    rgba = result.convert("RGBA")
+                    bottoms = []
+                    for index in range(frame_count):
+                        left = index * rgba.width // frame_count
+                        right = (index + 1) * rgba.width // frame_count
+                        pixels = rgba.load()
+                        points = [
+                            y
+                            for y in range(rgba.height)
+                            for x in range(left, right)
+                            if pixels[x, y][3] >= MODULE.ALPHA_THRESHOLD
+                        ]
+                        bottoms.append(max(points))
+
+                    self.assertEqual(len(set(bottoms)), 1)
+
     def test_preprocess_ignores_isolated_narrow_noise_between_frames(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

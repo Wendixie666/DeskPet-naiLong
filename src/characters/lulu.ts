@@ -31,13 +31,13 @@ export const lulu: CharacterConfig = {
     },
     walk: {
       kind: "sprite",
-      asset: "跑步.png",
-      frameCount: 8,
+      asset: "跑步.processed.png",
+      frameCount: 9,
       frameDurationMs: 90,
     },
     wave: {
       kind: "sprite",
-      asset: "打招呼.png",
+      asset: "打招呼.processed.png",
       frameCount: 6,
       frameDurationMs: 140,
     },
