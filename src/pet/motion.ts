@@ -262,8 +262,10 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
       if (state.action === options.character.interactionActions?.reminder) {
         return;
       }
+      if (state.isMoving || target !== undefined || climbingSide !== undefined) {
+        return;
+      }
       typingActivityRemainingMs = KEYBOARD_INACTIVITY_TIMEOUT_MS;
-      stopMovement();
       if (reminderPending) {
         reminderPending = false;
         if (startReminder()) {
@@ -278,6 +280,7 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
     },
 
     summon(targetPoint) {
+      typingActivityRemainingMs = 0;
       if (isWindowPerched()) {
         stopMovement();
         setAction("idle");

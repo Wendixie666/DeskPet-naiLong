@@ -58,15 +58,10 @@ test("键盘活动进入 typing，连续活动不重播，超时后恢复 idle",
   assert.deepEqual(states.map((state) => state.action), ["typing", "idle"]);
 });
 
-test("键盘活动会打断拖拽、摸头、攀爬和召唤行走", () => {
+test("键盘活动会打断拖拽和摸头", () => {
   const startActions: Array<(motion: ReturnType<typeof createKeyboardTestMotion>) => void> = [
     (motion) => motion.dragBy(1, 0),
     (motion) => motion.startPat(),
-    (motion) => {
-      motion.dragBy(-100, 0);
-      motion.endDrag();
-    },
-    (motion) => motion.summon({ x: 500, y: 600 }),
   ];
 
   for (const startAction of startActions) {
@@ -79,6 +74,38 @@ test("键盘活动会打断拖拽、摸头、攀爬和召唤行走", () => {
     motion.tick(KEYBOARD_INACTIVITY_TIMEOUT_MS);
     assert.equal(motion.getState().action, "idle");
   }
+});
+
+test("召唤行走优先于快捷键产生的键盘活动", () => {
+  const motion = createKeyboardTestMotion(() => {});
+
+  motion.keyboardActivity();
+  motion.summon({ x: 500, y: 600 });
+
+  assert.equal(motion.getState().action, "walk");
+  assert.equal(motion.getState().isMoving, true);
+
+  motion.keyboardActivity();
+
+  assert.equal(motion.getState().action, "walk");
+  assert.equal(motion.getState().isMoving, true);
+
+  motion.tick(5_000);
+
+  assert.equal(motion.getState().action, "idle");
+});
+
+test("键盘活动不会打断攀爬", () => {
+  const motion = createKeyboardTestMotion(() => {});
+
+  motion.dragBy(-100, 0);
+  motion.endDrag();
+  assert.equal(motion.getState().action, "climb");
+
+  motion.keyboardActivity();
+
+  assert.equal(motion.getState().action, "climb");
+  assert.equal(motion.getState().isMoving, true);
 });
 
 test("typing 结束后回到 idle，不恢复被打断的动作", () => {
