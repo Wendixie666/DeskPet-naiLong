@@ -13,13 +13,11 @@ export const naiwa: CharacterConfig = {
   visual: {
     contentHeight: 180,
     footAnchor: { x: 96, y: 202 },
-    headInteraction: { x: 32, y: 8, width: 128, height: 96 },
     perchAnchorY: 120,
   },
   interactionActions: {
     climb: "climb",
     drag: "drag",
-    pat: "pat",
     reminder: "reminder",
     windowPerch: "windowPerch",
   },
@@ -67,12 +65,6 @@ export const naiwa: CharacterConfig = {
       kind: "directional-sprite",
       assets: ["转头-上右.processed.png", "转头-下右.processed.png"],
       frameCount: 8,
-      frameDurationMs: 120,
-    },
-    pat: {
-      kind: "sprite",
-      asset: "摸头静态.processed.png",
-      frameCount: 12,
       frameDurationMs: 120,
     },
     drag: {

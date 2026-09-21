@@ -12,12 +12,11 @@ test("奶蛙配置提供行为层需要的全部通用动作", () => {
   assert.deepEqual(naiwa.interactionActions, {
     climb: "climb",
     drag: "drag",
-    pat: "pat",
     reminder: "reminder",
     windowPerch: "windowPerch",
   });
+  assert.equal(naiwa.visual.headInteraction, undefined);
   assert.equal(naiwa.visual.perchAnchorY, 120);
-  assert.equal(naiwa.actions.pat.kind, "sprite");
   assert.equal(naiwa.actions.climb.kind, "sprite");
   assert.equal(naiwa.actions.drag.kind, "image");
   assert.equal(naiwa.actions.typing.kind, "sprite");

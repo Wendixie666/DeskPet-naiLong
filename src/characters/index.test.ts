@@ -48,9 +48,9 @@ test("CharacterRegistry 拒绝空点击动作或未配置的点击动作", () =>
 test("CharacterRegistry 校验交互动作配置", () => {
   assert.throws(
     () => new CharacterRegistry([{
-      ...naiwa,
-      interactionActions: { ...naiwa.interactionActions!, pat: "missing" },
-    }], naiwa.id),
+      ...lulu,
+      interactionActions: { ...lulu.interactionActions!, pat: "missing" },
+    }], lulu.id),
     /交互动作 pat/,
   );
 });
@@ -58,9 +58,9 @@ test("CharacterRegistry 校验交互动作配置", () => {
 test("CharacterRegistry 拒绝没有摸头动作的头部命中区域", () => {
   assert.throws(
     () => new CharacterRegistry([{
-      ...naiwa,
+      ...lulu,
       interactionActions: undefined,
-    }], naiwa.id),
+    }], lulu.id),
     /头部命中区域.*摸头动作/,
   );
 });

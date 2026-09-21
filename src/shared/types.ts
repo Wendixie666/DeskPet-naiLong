@@ -31,7 +31,7 @@ export interface CharacterVisual {
 export interface CharacterInteractionActions {
   climb: string;
   drag: string;
-  pat: string;
+  pat?: string;
   reminder?: string;
   windowPerch?: string;
 }
