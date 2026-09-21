@@ -1,6 +1,6 @@
 import type { Bounds, Point, Size, SystemWindow } from "../shared/types";
 
-export const WINDOW_PERCH_SNAP_DISTANCE = 32;
+export const WINDOW_PERCH_SNAP_DISTANCE = 96;
 
 export function findWindowPerchTarget(
   referencePoint: Point,
