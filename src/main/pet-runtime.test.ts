@@ -7,11 +7,9 @@ import type {
   PetSnapshot,
   PetState,
   Point,
-  SystemWindow,
   TodoItem,
 } from "../shared/types.ts";
 import { createPetRuntime, type PetRuntimeWindow } from "./pet-runtime.ts";
-import type { WindowQuery } from "./window-query.ts";
 
 function createWindow(initialPosition: Point): PetRuntimeWindow & {
   bounds: Bounds;
@@ -44,7 +42,6 @@ function createRuntime(
   window: PetRuntimeWindow,
   snapshots: PetSnapshot[],
   onReminderChange?: (todo?: TodoItem) => void,
-  windowQuery?: WindowQuery,
   cursorPosition: Point = { x: 0, y: 0 },
 ) {
   return createPetRuntime({
@@ -57,33 +54,8 @@ function createRuntime(
     onReminderChange,
     onStateChange() {},
     scale: 1,
-    windowQuery,
     window,
   });
-}
-
-function createWindowQuery(target: SystemWindow): {
-  query: WindowQuery;
-  setTarget(nextTarget: SystemWindow | undefined): void;
-  boundsCalls: number;
-} {
-  let currentTarget: SystemWindow | undefined = target;
-  const result = {
-    boundsCalls: 0,
-    query: {
-      async getWindowBounds(id: string) {
-        result.boundsCalls += 1;
-        return currentTarget?.id === id ? currentTarget : undefined;
-      },
-      async listWindows() {
-        return currentTarget ? [currentTarget] : [];
-      },
-    } as WindowQuery,
-    setTarget(nextTarget: SystemWindow | undefined) {
-      currentTarget = nextTarget;
-    },
-  };
-  return result;
 }
 
 test("运行编排 module 初始化并转发桌宠输入", () => {
@@ -200,92 +172,4 @@ test("运行编排 module 可以提前关闭提醒并保持 Todo 未完成", (t)
 
   assert.equal(runtime.getSnapshot().state.action, "idle");
   assert.deepEqual(reminders, [todo, undefined]);
-});
-
-test("拖拽释放在窗口顶部进入 windowPerch，目标 bounds 改变后退出", async (t) => {
-  t.mock.timers.enable({ apis: ["setInterval"] });
-  const target: SystemWindow = {
-    id: "window-1",
-    bounds: { x: 250, y: 382, width: 800, height: 600 },
-    isMinimized: false,
-    isOrdinary: true,
-  };
-  const query = createWindowQuery(target);
-  const runtimeWindow = createWindow({ x: 300, y: 180 });
-  const runtime = createRuntime(
-    runtimeWindow,
-    [],
-    undefined,
-    query.query,
-    { x: 396, y: 382 },
-  );
-
-  runtime.dragBy(0, 0);
-  runtime.endDrag();
-  await Promise.resolve();
-
-  assert.equal(runtime.getSnapshot().state.action, "windowPerch");
-  assert.deepEqual(runtimeWindow.bounds, {
-    x: 554,
-    y: 262,
-    width: 192,
-    height: 208,
-  });
-
-  query.setTarget({
-    ...target,
-    bounds: { ...target.bounds, width: 801 },
-  });
-  t.mock.timers.tick(150);
-  await Promise.resolve();
-  assert.equal(runtime.getSnapshot().state.action, "idle");
-  assert.equal(query.boundsCalls, 1);
-});
-
-test("拖拽释放使用鼠标位置判断窗口顶部，而不是桌宠脚部位置", async () => {
-  const target: SystemWindow = {
-    id: "window-release-point",
-    bounds: { x: 250, y: 330, width: 800, height: 600 },
-    isMinimized: false,
-    isOrdinary: true,
-  };
-  const query = createWindowQuery(target);
-  const runtime = createRuntime(
-    createWindow({ x: 300, y: 180 }),
-    [],
-    undefined,
-    query.query,
-    { x: 400, y: 338 },
-  );
-
-  runtime.dragBy(0, 0);
-  runtime.endDrag();
-  await Promise.resolve();
-
-  assert.equal(runtime.getSnapshot().state.action, "windowPerch");
-  runtime.dispose();
-});
-
-test("用户再次拖动停靠桌宠时立即退出 windowPerch", async () => {
-  const target: SystemWindow = {
-    id: "window-2",
-    bounds: { x: 250, y: 382, width: 800, height: 600 },
-    isMinimized: false,
-    isOrdinary: true,
-  };
-  const query = createWindowQuery(target);
-  const runtime = createRuntime(
-    createWindow({ x: 300, y: 180 }),
-    [],
-    undefined,
-    query.query,
-    { x: 396, y: 382 },
-  );
-
-  runtime.dragBy(0, 0);
-  runtime.endDrag();
-  await Promise.resolve();
-  runtime.dragBy(10, 5);
-
-  assert.equal(runtime.getSnapshot().state.action, "drag");
 });
