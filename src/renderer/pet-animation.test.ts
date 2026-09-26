@@ -59,6 +59,37 @@ test("directionFrame 右向取末帧不镜像，左向镜像", () => {
   });
 });
 
+test("Codex v2 方向图集按 16 个方向直接取帧", () => {
+  const action: DirectionalSpriteAction = {
+    assets: ["look-up.processed.png", "look-down.processed.png"],
+    frameCount: 8,
+    frameDurationMs: 120,
+    kind: "directional-sprite",
+    directionalMode: "direct-16",
+  };
+
+  assert.deepEqual(directionFrame(action, "up"), {
+    assetIndex: 0,
+    frameIndex: 0,
+    mirrored: false,
+  });
+  assert.deepEqual(directionFrame(action, "right"), {
+    assetIndex: 0,
+    frameIndex: 4,
+    mirrored: false,
+  });
+  assert.deepEqual(directionFrame(action, "down"), {
+    assetIndex: 1,
+    frameIndex: 0,
+    mirrored: false,
+  });
+  assert.deepEqual(directionFrame(action, "left"), {
+    assetIndex: 1,
+    frameIndex: 4,
+    mirrored: false,
+  });
+});
+
 test("spriteFrameIndex 播放到指定帧后定格", () => {
   const action = {
     asset: "reminder.png",

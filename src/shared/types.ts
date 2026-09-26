@@ -74,6 +74,7 @@ export interface DirectionalSpriteAction {
   frameCount: number;
   frameDurationMs: number;
   kind: "directional-sprite";
+  directionalMode?: "direct-16";
 }
 
 export type CharacterAction = ImageAction | SpriteAction | DirectionalSpriteAction;

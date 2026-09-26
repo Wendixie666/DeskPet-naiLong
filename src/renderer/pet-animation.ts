@@ -21,6 +21,25 @@ export interface DirectionalFrame {
   mirrored: boolean;
 }
 
+const codexLookFrame: Record<LookDirection, DirectionalFrame> = {
+  up: { assetIndex: 0, frameIndex: 0, mirrored: false },
+  "up-near-right": { assetIndex: 0, frameIndex: 1, mirrored: false },
+  "up-right": { assetIndex: 0, frameIndex: 2, mirrored: false },
+  "right-near-up": { assetIndex: 0, frameIndex: 3, mirrored: false },
+  right: { assetIndex: 0, frameIndex: 4, mirrored: false },
+  "right-near-down": { assetIndex: 0, frameIndex: 5, mirrored: false },
+  "down-right": { assetIndex: 0, frameIndex: 6, mirrored: false },
+  "down-near-right": { assetIndex: 0, frameIndex: 7, mirrored: false },
+  down: { assetIndex: 1, frameIndex: 0, mirrored: false },
+  "down-near-left": { assetIndex: 1, frameIndex: 1, mirrored: false },
+  "down-left": { assetIndex: 1, frameIndex: 2, mirrored: false },
+  "left-near-down": { assetIndex: 1, frameIndex: 3, mirrored: false },
+  left: { assetIndex: 1, frameIndex: 4, mirrored: false },
+  "left-near-up": { assetIndex: 1, frameIndex: 5, mirrored: false },
+  "up-left": { assetIndex: 1, frameIndex: 6, mirrored: false },
+  "up-near-left": { assetIndex: 1, frameIndex: 7, mirrored: false },
+};
+
 export function spriteFrameIndex(action: SpriteAction, elapsedMs: number): number {
   const frameIndex = Math.floor(elapsedMs / action.frameDurationMs);
   if (action.holdFrameIndex === undefined) {
@@ -33,6 +52,9 @@ export function directionFrame(
   action: DirectionalSpriteAction,
   direction: LookDirection,
 ): DirectionalFrame {
+  if (action.directionalMode === "direct-16") {
+    return codexLookFrame[direction];
+  }
   const lastFrame = action.frameCount - 1;
   const frameByDirection: Record<LookDirection, DirectionalFrame> = {
     up: { assetIndex: 0, frameIndex: 0, mirrored: false },
@@ -115,9 +137,10 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
   ): void {
     const frameCount = action.kind === "sprite" ? action.frameCount : 1;
     const sourceWidth = source.naturalWidth / frameCount;
+    const sourceHeight = source.naturalHeight;
     const placement = visualPlacement(
       sourceWidth,
-      source.naturalHeight,
+      sourceHeight,
       action,
       action.adjustment,
     );
@@ -127,11 +150,11 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
       sourceWidth * frameIndex,
       0,
       sourceWidth,
-      source.naturalHeight,
+      sourceHeight,
       placement.x,
       placement.y,
       sourceWidth * placement.scale,
-      source.naturalHeight * placement.scale,
+      sourceHeight * placement.scale,
     );
   }
 
@@ -139,6 +162,7 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
     assetLoader.load(action).then((sources) => {
       const startedAt = performance.now();
       const intro = action.kind === "directional-sprite"
+        && action.directionalMode !== "direct-16"
         ? introFrames(action)
         : [];
       const introDuration = intro.length * (action.kind === "directional-sprite"
@@ -182,9 +206,10 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
   ): void {
     const source = sources[frame.assetIndex];
     const sourceWidth = source.naturalWidth / action.frameCount;
+    const sourceHeight = source.naturalHeight;
     const placement = visualPlacement(
       sourceWidth,
-      source.naturalHeight,
+      sourceHeight,
       action,
       action.adjustment,
     );
@@ -199,11 +224,11 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
       sourceWidth * frame.frameIndex,
       0,
       sourceWidth,
-      source.naturalHeight,
+      sourceHeight,
       placement.x,
       placement.y,
       sourceWidth * placement.scale,
-      source.naturalHeight * placement.scale,
+      sourceHeight * placement.scale,
     );
     context.restore();
   }

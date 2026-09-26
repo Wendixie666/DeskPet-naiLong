@@ -2,10 +2,14 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("node:path");
 
 const projectRoot = path.resolve(__dirname, "..");
-const { naiwa } = require(path.join(
+const characterModuleName = process.env.DESKPET_RENDER_CHARACTER === "danaiwa"
+  ? "danaiwa"
+  : "naiwa";
+const character = require(path.join(
   projectRoot,
-  "dist/characters/naiwa.js",
-));
+  `dist/characters/${characterModuleName}.js`,
+))[characterModuleName];
+const chatUi = character.chatUi;
 
 app.whenReady().then(async () => {
   async function visiblePixelCount(targetWindow) {
@@ -21,14 +25,14 @@ app.whenReady().then(async () => {
   }
 
   const settings = {
-    characterId: "naiwa",
+    characterId: character.id,
     defaultPosition: "bottom-right",
     petScale: 1,
     summonShortcut: "CommandOrControl+Alt+P",
     theme: "light",
   };
   ipcMain.handle("pet:snapshot", () => ({
-    character: naiwa,
+    character,
     state: {
       action: "idle",
       facing: "right",
@@ -37,12 +41,12 @@ app.whenReady().then(async () => {
     },
   }));
   ipcMain.handle("settings:get", () => ({
-    characters: [{ id: naiwa.id, name: naiwa.name }],
+    characters: [{ id: character.id, name: character.name }],
     petScales: [0.75, 1, 1.25, 1.5],
     settings,
   }));
   ipcMain.handle("settings:update", (_event, next) => ({
-    characters: [{ id: naiwa.id, name: naiwa.name }],
+    characters: [{ id: character.id, name: character.name }],
     petScales: [0.75, 1, 1.25, 1.5],
     settings: next,
   }));
@@ -55,20 +59,14 @@ app.whenReady().then(async () => {
     hasApiKey: false,
   }));
   ipcMain.handle("chat:get-state", () => ({
-    characterId: "naiwa",
-    chatUi: {
-      title: "和奶蛙聊聊天",
-      emptyState: "跟奶蛙说点什么吧",
-    },
+    characterId: character.id,
+    chatUi,
     messages: [],
     generating: false,
   }));
   ipcMain.handle("chat:clear", () => ({
-    characterId: "naiwa",
-    chatUi: {
-      title: "和奶蛙聊聊天",
-      emptyState: "跟奶蛙说点什么吧",
-    },
+    characterId: character.id,
+    chatUi,
     messages: [],
     generating: false,
   }));
@@ -77,7 +75,7 @@ app.whenReady().then(async () => {
   ipcMain.handle("memo:list", () => []);
 
   const window = new BrowserWindow({
-    ...naiwa.size,
+    ...character.size,
     frame: false,
     show: false,
     transparent: true,
@@ -125,6 +123,15 @@ app.whenReady().then(async () => {
   const facingLeft = await window.webContents.executeJavaScript(
     'document.querySelector("#pet-canvas").classList.contains("facing-left")',
   );
+  window.webContents.send("pet:state", {
+    action: character.trackingAction ?? "idle",
+    facing: "right",
+    isMoving: false,
+    lookDirection: "up",
+    position: { x: 0, y: 0 },
+  });
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  const lookVisiblePixels = await visiblePixelCount(window);
   window.webContents.send("pet:state", {
     action: "reminder",
     facing: "right",
@@ -244,19 +251,20 @@ app.whenReady().then(async () => {
     visiblePixels,
     reminderVisiblePixels,
     walkVisiblePixels,
+    lookVisiblePixels,
   };
   console.log(JSON.stringify(result));
 
   if (
     rendererErrors.length > 0
-    || canvasState.width !== naiwa.size.width
-    || canvasState.height !== naiwa.size.height
+    || canvasState.width !== character.size.width
+    || canvasState.height !== character.size.height
     || settingsState.characterOptions !== 1
     || settingsState.shortcut !== settings.summonShortcut
     || memoState.title !== "备忘录"
-    || chatState.title !== "和奶蛙聊聊天"
-    || chatWindowTitle !== "和奶蛙聊聊天"
-    || chatState.emptyState !== "跟奶蛙说点什么吧"
+    || chatState.title !== chatUi.title
+    || chatWindowTitle !== chatUi.title
+    || chatState.emptyState !== chatUi.emptyState
     || chatState.placeholder !== "输入消息，按 Enter 发送…"
     || chatState.sendButton !== "发送"
     || reminderState.hidden
@@ -265,6 +273,7 @@ app.whenReady().then(async () => {
     || !facingLeft
     || reminderVisiblePixels < 1_000
     || walkVisiblePixels < 1_000
+    || (character.trackingAction !== undefined && lookVisiblePixels < 1_000)
   ) {
     app.exit(1);
     return;
