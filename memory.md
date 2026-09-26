@@ -1,6 +1,7 @@
 # 项目记忆
 
 - 第一阶段技术栈确定为 Electron + TypeScript + 原生 HTML/CSS，不引入 React、数据库或状态机框架。
+- README 展示图片统一放在 `docs/assets/`：角色概览位于 `illustrations/`，功能截图位于 `screenshots/`；`素材/` 仍只存放运行时角色资源。
 - 系统窗口能力集中在 `main`，召唤、拖拽和移动推进集中在 `pet` 的 `PetMotion`，显示集中在 `renderer`，角色差异由 `characters` 配置表达。
 - 主进程 `summon(x, y)` 与 `PetMotion.summon()` 都使用屏幕 DIP 坐标，目标点语义是角色脚底中心；`PetMotion` 结合鼠标所在屏幕、实际窗口尺寸和角色缩放完成换算与限界。
 - 原始奶蛙动作图是蓝幕横向素材板，renderer 通过角色配置切帧并在 Canvas 中实时去蓝，不改写原始素材。
@@ -12,9 +13,10 @@
 - 完整窗口移动支持 Windows、macOS 和 Linux X11/XWayland；Electron 与 Tauri 在 Linux 原生 Wayland 都有程序化窗口定位限制。
 - 设置窗口的 acrylic 系统材质只在 Windows 启用；macOS 最后一个窗口关闭后保留应用进程，并通过 activate 重新创建桌宠窗口。
 - macOS 适配：启动时 `app.dock.hide()`（UIElement，避免 Dock 图标和进程类型切换闪烁），桌宠窗口在 darwin 下 `setAlwaysOnTop(true, "screen-saver")` + `setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true })` 实现跨 Space / 覆盖全屏。
-- 打包用 electron-builder（配置在 package.json `build` 字段）：产物输出 `release/`（与 TS 的 `dist/` 区分），`files` 必须包含 `dist/**`、`src/renderer/**`、`素材/奶蛙/processed/**`（排除 debug 图）；mac 目标 dmg/arm64，扩展 x64/universal 用 CLI `--x64`/`--universal` 或改 arch 数组；签名/公证走 `CSC_LINK`、`APPLE_ID`+`APPLE_APP_SPECIFIC_PASSWORD` 等环境变量，未写死。
+- 打包用 electron-builder（配置在 package.json `build` 字段）：产物输出 `release/`（与 TS 的 `dist/` 区分），`files` 必须包含 `dist/**`、`src/renderer/**`、`素材/奶蛙/processed/**`（排除 debug 图）；Windows NSIS 使用向导安装模式，提供安装/卸载进度、桌面和开始菜单快捷方式；mac 目标 dmg/arm64，扩展 x64/universal 用 CLI `--x64`/`--universal` 或改 arch 数组；签名/公证走 `CSC_LINK`、`APPLE_ID`+`APPLE_APP_SPECIFIC_PASSWORD` 等环境变量，未写死。
 - 应用图标由 `tools/make_icons.py`（Pillow）从 `素材/奶蛙/default.jpeg` 生成 `build/icon.png/.ico/.icns`，脚本内含右下角水印的纵向渐变覆盖处理；素材更换后需重跑。
 - 主进程模块划分：快捷键注册在 `main/summon-shortcut`（注入 registrar 可测），桌宠窗口创建+runtime 装配在 `main/pet-window-create`（tick 定时器由 runtime 自驱，窗口关闭时 `runtime.dispose()`），设置窗口在 `main/settings-window`，`main/index.ts` 只剩装配与生命周期。
+- 主进程使用 Electron 单实例锁；重复启动时聚焦已有桌宠窗口，不再创建第二个桌宠进程。
 - 脚底中心几何换算集中在纯函数模块 `pet/geometry`：召唤路径（motion）与缩放路径（pet-window）共用 `scaledFootAnchor`/`constrainPosition`，禁止再各自实现 clamp 公式。
 - IPC 通道名单一事实来源在 `shared/channels.ts`（含推送通道 pet:state / pet:snapshot-changed）；renderer 的 `global.d.ts` 用 `typeof import("../preload/index").desktopPetBridge` 引用 preload bridge 类型；`pet:summon` 通道已删除（召唤只走主进程全局快捷键）。
 - renderer 动画：帧序列纯函数 `directionFrame`/`introFrames` 从 pet-animation 闭包提升为模块导出，directional/sprite/static 三类动作共用单一 rAF 循环。
@@ -22,7 +24,7 @@
 - 奶蛙和噜噜的被提起动作通过 `CharacterVisual.dragAnchor` 配置 canvas 局部尖尖锚点；拖拽首次越过阈值时，主进程先把该锚点对齐到鼠标，再继续使用增量移动。
 - renderer 手势只接受首个 `pointerId`，并在 `pointerup/pointercancel/lostpointercapture/blur` 统一结束；配置 `headInteraction` 时必须同时提供 `interactionActions.pat`。
 - 释放拖拽时若窗口距当前工作区左右边缘不超过 24px，`PetMotion` 会吸附到对应边缘，进入 climb 并让角色面向屏幕内侧（左边缘 facing right、右边缘 facing left）；攀爬沿 Y 轴向上移动，到达工作区顶部后恢复 idle。
-- 全局键盘活动由主进程 `KeyboardActivityService` 通过 `uiohook-napi` 转成无参数活动信号，再经 `PetRuntime.keyboardActivity()` 进入 `PetMotion`；普通键盘活动进入 typing，1.5 秒无活动后回 idle，不恢复被打断动作，但召唤/攀爬移动优先于 typing，移动期间忽略键盘活动，召唤开始时清除已有 typing 上下文。Windows/macOS/Linux X11 可用，macOS 需 Input Monitoring/Accessibility 权限，Linux 原生 Wayland 不保证支持；服务失败不阻止桌宠启动，退出时停止 hook。
+- 全局键盘活动由主进程 `KeyboardActivityService` 通过 `uiohook-napi` 转成无参数活动信号，再经 `PetRuntime.keyboardActivity()` 进入 `PetMotion`；普通键盘活动进入 typing，1.5 秒无活动后回 idle，不恢复被打断动作，但召唤/攀爬移动优先于 typing，移动期间忽略键盘活动，召唤开始时清除已有 typing 上下文，召唤结束后额外冷却 250ms 以过滤召唤热键本身。Windows/macOS/Linux X11 可用，macOS 需 Input Monitoring/Accessibility 权限，Linux 原生 Wayland 不保证支持；服务失败不阻止桌宠启动，退出时停止 hook。
 - 工具箱入口位于桌宠右键菜单，备忘录使用独立 Memo 窗口；Todo 数据保存在 Electron `userData/todos.json`，主进程链路是 `ReminderScheduler.onReminder(todo)` → `PetRuntime.triggerReminder(todo)` → 角色配置的 `reminder` 动作与独立 Overlay，Electron Notification 只作为角色提醒不可用时的 fallback。
 - Linux 上打 Windows NSIS 包需要 wine：项目内置便携版 `.wine-local/wine-10.0-amd64/`（Kron4ek 构建），打包前 `export PATH="$PWD/.wine-local/wine-10.0-amd64/bin:$PATH"` 再跑 `npm run package:win`；产物为 `release/DeskPet-naiLong Setup <版本>.exe`（nsis）和 `DeskPet-naiLong <版本>.exe`（portable 单文件）。
 - 构建关键约束：`tsc -p tsconfig.renderer.json` 会把 renderer import 到的非 renderer 文件（preload/shared/pet）按 ES2022 重新输出，曾把 dist/preload 覆盖成 ESM 导致打包版全坏。现约定：pass1（CJS）exclude src/renderer，pass2 输出到独立目录 `dist/renderer-esm/`，HTML 引用该路径；build 脚本先清空 dist 防旧产物残留。

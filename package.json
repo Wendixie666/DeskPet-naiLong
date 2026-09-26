@@ -1,6 +1,6 @@
 {
   "name": "deskpet-nailong",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "奶蛙桌宠的最小可用版本",
   "author": "wendy",
@@ -56,6 +56,15 @@
         "portable"
       ],
       "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "DeskPet-naiLong",
+      "runAfterFinish": true,
+      "uninstallDisplayName": "DeskPet-naiLong"
     },
     "linux": {
       "target": "AppImage",

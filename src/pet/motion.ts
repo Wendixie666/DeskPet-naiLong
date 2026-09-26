@@ -13,6 +13,7 @@ import {
 import { resolveLookDirection } from "./look-direction.ts";
 
 export const KEYBOARD_INACTIVITY_TIMEOUT_MS = 1_500;
+export const SUMMON_KEYBOARD_COOLDOWN_MS = 250;
 
 interface PetMotionWindow {
   getBounds(): Bounds;
@@ -54,6 +55,7 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
   let climbingSide: Facing | undefined;
   let recentActions: string[] = [];
   let typingActivityRemainingMs = 0;
+  let summonKeyboardCooldownMs = 0;
   let reminderPending = false;
   const state: PetState = {
     actionSequence: 0,
@@ -250,7 +252,10 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
       if (state.action === options.character.interactionActions?.reminder) {
         return;
       }
-      if (state.isMoving || target !== undefined || climbingSide !== undefined) {
+      if (state.isMoving
+        || target !== undefined
+        || climbingSide !== undefined
+        || summonKeyboardCooldownMs > 0) {
         return;
       }
       typingActivityRemainingMs = KEYBOARD_INACTIVITY_TIMEOUT_MS;
@@ -269,6 +274,7 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
 
     summon(targetPoint) {
       typingActivityRemainingMs = 0;
+      summonKeyboardCooldownMs = SUMMON_KEYBOARD_COOLDOWN_MS;
       stopMovement();
       const bounds = options.window.getBounds();
       const footAnchor = scaledFootAnchor(options.character, options.scale);
@@ -322,6 +328,10 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
     },
 
     tick(deltaMs) {
+      summonKeyboardCooldownMs = Math.max(
+        summonKeyboardCooldownMs - deltaMs,
+        0,
+      );
       typingActivityRemainingMs = Math.max(
         typingActivityRemainingMs - deltaMs,
         0,

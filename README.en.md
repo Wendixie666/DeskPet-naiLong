@@ -56,7 +56,7 @@ Character differences are wired through configuration, so more characters and ac
 - Right-click the pet to open the toolbox, settings, or quit menu.
 
 <p align="center">
-  <img src="image.png" width="500">
+  <img src="docs/assets/illustrations/character-overview.png" width="500">
 </p>
 
 ### Toolbox
@@ -67,7 +67,7 @@ Character differences are wired through configuration, so more characters and ac
 - **AI configuration**: Supports DeepSeek and OpenAI Compatible services with configurable Base URL, Model, and API Key.
 
 <p align="center">
-  <img src="image-1.png" width="500">
+  <img src="docs/assets/screenshots/toolbox.png" width="500">
 </p>
 
 ### Settings
@@ -81,7 +81,7 @@ Right-click the pet and open “Settings” to change:
 - The summon shortcut.
 
 <p align="center">
-  <img src="image-2.png" width="500">
+  <img src="docs/assets/screenshots/settings.png" width="500">
 </p>
 
 ## Usage

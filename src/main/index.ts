@@ -67,6 +67,11 @@ if (process.platform === "darwin") {
   app.dock?.hide();
 }
 
+const hasSingleInstanceLock = app.requestSingleInstanceLock();
+if (!hasSingleInstanceLock) {
+  app.quit();
+}
+
 const registry = new CharacterRegistry([naiwa, lulu, danaiwa, xiaohei], naiwa.id);
 const shortcuts = createShortcutManager(globalShortcut, summonAtCursor);
 
@@ -119,6 +124,17 @@ function settingsSnapshot(): SettingsSnapshot {
 function summonAtCursor(): void {
   const cursor = screen.getCursorScreenPoint();
   handle?.runtime.summon({ x: cursor.x, y: cursor.y });
+}
+
+function focusPetWindow(): void {
+  if (!handle || handle.window.isDestroyed()) {
+    return;
+  }
+  if (handle.window.isMinimized()) {
+    handle.window.restore();
+  }
+  handle.window.show();
+  handle.window.focus();
 }
 
 function showSystemReminder(todo: TodoItem): void {
@@ -276,59 +292,63 @@ function saveLastPosition(): void {
   settingsManager.saveLastPosition({ x, y });
 }
 
-app.whenReady().then(() => {
-  void logGpuDiagnostics();
-  logAiStorageDiagnostics();
-  settingsManager = createSettingsManager(
-    path.join(app.getPath("userData"), "settings.json"),
-    (id) => registry.has(id),
-    applySettings,
-  );
-  todoStore = createTodoStore(path.join(app.getPath("userData"), "todos.json"));
-  aiConfigStore = createAiConfigStore(path.join(app.getPath("userData"), "ai-config.json"));
-  aiCredentialStore = createAiCredentialStore(
-    path.join(app.getPath("userData"), "ai-api-key.bin"),
-    safeStorage,
-  );
-  chatService = createChatService({
-    getCharacter: (characterId) => registry.get(characterId),
-    getAiConfig: () => aiConfigStore.load(),
-    getApiKey: () => aiCredentialStore.read(),
-    loadPersona: (file) => createPersonaLoader(
-      path.join(app.getAppPath(), "src/characters/personas"),
-    ).load(file),
-    createProvider: (config, apiKey) => new OpenAiCompatibleProvider(config, apiKey),
-  });
-  chatIpcHandlers = createChatIpcHandlers(
-    chatService,
-    () => settingsManager.get().characterId,
-  );
-  setChatWindowCloseHandler(() => chatIpcHandlers.cancel());
-  reminderScheduler = createReminderScheduler({
-    store: todoStore,
-    onReminder(todo) {
-      if (!handle || !handle.runtime.triggerReminder(todo)) {
-        showSystemReminder(todo);
-      }
-    },
-  });
-  registerIpc();
-  createPetWindow();
-  reminderScheduler.start();
-  startKeyboardActivity();
+if (hasSingleInstanceLock) {
+  app.on("second-instance", focusPetWindow);
 
-  try {
-    settingsManager.activate();
-  } catch (error) {
-    console.error(error);
-  }
+  app.whenReady().then(() => {
+    void logGpuDiagnostics();
+    logAiStorageDiagnostics();
+    settingsManager = createSettingsManager(
+      path.join(app.getPath("userData"), "settings.json"),
+      (id) => registry.has(id),
+      applySettings,
+    );
+    todoStore = createTodoStore(path.join(app.getPath("userData"), "todos.json"));
+    aiConfigStore = createAiConfigStore(path.join(app.getPath("userData"), "ai-config.json"));
+    aiCredentialStore = createAiCredentialStore(
+      path.join(app.getPath("userData"), "ai-api-key.bin"),
+      safeStorage,
+    );
+    chatService = createChatService({
+      getCharacter: (characterId) => registry.get(characterId),
+      getAiConfig: () => aiConfigStore.load(),
+      getApiKey: () => aiCredentialStore.read(),
+      loadPersona: (file) => createPersonaLoader(
+        path.join(app.getAppPath(), "src/characters/personas"),
+      ).load(file),
+      createProvider: (config, apiKey) => new OpenAiCompatibleProvider(config, apiKey),
+    });
+    chatIpcHandlers = createChatIpcHandlers(
+      chatService,
+      () => settingsManager.get().characterId,
+    );
+    setChatWindowCloseHandler(() => chatIpcHandlers.cancel());
+    reminderScheduler = createReminderScheduler({
+      store: todoStore,
+      onReminder(todo) {
+        if (!handle || !handle.runtime.triggerReminder(todo)) {
+          showSystemReminder(todo);
+        }
+      },
+    });
+    registerIpc();
+    createPetWindow();
+    reminderScheduler.start();
+    startKeyboardActivity();
 
-  app.on("activate", () => {
-    if (!handle) {
-      createPetWindow();
+    try {
+      settingsManager.activate();
+    } catch (error) {
+      console.error(error);
     }
+
+    app.on("activate", () => {
+      if (!handle) {
+        createPetWindow();
+      }
+    });
   });
-});
+}
 
 app.on("before-quit", saveLastPosition);
 

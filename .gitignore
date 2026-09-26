@@ -3,3 +3,4 @@ dist/
 release/
 .wine-local/
 __pycache__/
+.codex

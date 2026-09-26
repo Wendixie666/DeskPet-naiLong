@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   createPetMotion,
   KEYBOARD_INACTIVITY_TIMEOUT_MS,
+  SUMMON_KEYBOARD_COOLDOWN_MS,
 } from "./motion.ts";
 
 function createKeyboardTestMotion(
@@ -93,6 +94,21 @@ test("召唤行走优先于快捷键产生的键盘活动", () => {
   motion.tick(5_000);
 
   assert.equal(motion.getState().action, "idle");
+});
+
+test("召唤刚结束时不会把快捷键活动切成 typing", () => {
+  const motion = createKeyboardTestMotion(() => {});
+
+  motion.summon({ x: 196, y: 402 });
+  motion.tick(1);
+  assert.equal(motion.getState().action, "idle");
+
+  motion.keyboardActivity();
+  assert.equal(motion.getState().action, "idle");
+
+  motion.tick(SUMMON_KEYBOARD_COOLDOWN_MS);
+  motion.keyboardActivity();
+  assert.equal(motion.getState().action, "typing");
 });
 
 test("键盘活动不会打断攀爬", () => {

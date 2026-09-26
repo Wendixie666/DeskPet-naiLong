@@ -56,7 +56,7 @@ npm start
 - 右键点击桌宠可以打开工具箱、设置或退出菜单。
 
 <p align="center">
-  <img src="image.png" width="500">
+  <img src="docs/assets/illustrations/character-overview.png" width="500">
 </p>
 
 ### 工具箱
@@ -67,7 +67,7 @@ npm start
 - **AI 配置**：支持 DeepSeek 和 OpenAI Compatible 服务，可填写 Base URL、Model 和 API Key。
 
 <p align="center">
-  <img src="image-1.png" width="500">
+  <img src="docs/assets/screenshots/toolbox.png" width="500">
 </p>
 
 ### 设置
@@ -81,7 +81,7 @@ npm start
 - 召唤快捷键。
 
 <p align="center">
-  <img src="image-2.png" width="500">
+  <img src="docs/assets/screenshots/settings.png" width="500">
 </p>
 
 ## 使用方式
