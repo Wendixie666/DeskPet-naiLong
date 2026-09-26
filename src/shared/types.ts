@@ -26,7 +26,6 @@ export interface CharacterVisual {
   dragAnchor?: Point;
   footAnchor: Point;
   headInteraction?: Bounds;
-  perchAnchorY?: number;
 }
 
 export interface CharacterInteractionActions {
@@ -34,7 +33,6 @@ export interface CharacterInteractionActions {
   drag: string;
   pat?: string;
   reminder?: string;
-  windowPerch?: string;
 }
 
 export interface CharacterChatUi {
@@ -52,14 +50,12 @@ export interface PetState {
 }
 
 export interface ImageAction {
-  anchor?: "foot" | "perch";
   adjustment?: VisualAdjustment;
   asset: string;
   kind: "image";
 }
 
 export interface SpriteAction {
-  anchor?: "foot" | "perch";
   adjustment?: VisualAdjustment;
   asset: string;
   frameCount: number;
@@ -69,7 +65,6 @@ export interface SpriteAction {
 }
 
 export interface DirectionalSpriteAction {
-  anchor?: "foot" | "perch";
   adjustment?: VisualAdjustment;
   assets: [string, string];
   frameCount: number;
@@ -100,13 +95,6 @@ export interface CharacterConfig {
 export interface PetSnapshot {
   character: CharacterConfig;
   state: PetState;
-}
-
-export interface SystemWindow {
-  id: string;
-  bounds: Bounds;
-  isMinimized: boolean;
-  isOrdinary: boolean;
 }
 
 export type DefaultPosition = "bottom-right" | "last";

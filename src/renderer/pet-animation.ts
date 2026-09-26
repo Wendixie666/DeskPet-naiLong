@@ -124,9 +124,7 @@ export function createPetAnimator(canvas: HTMLCanvasElement): PetAnimator {
     return {
       scale,
       x: character.visual.footAnchor.x - sourceWidth / 2 * scale + offset.x,
-      y: action.anchor === "perch"
-        ? offset.y
-        : character.visual.footAnchor.y - sourceHeight * scale + offset.y,
+      y: character.visual.footAnchor.y - sourceHeight * scale + offset.y,
     };
   }
 

@@ -29,7 +29,6 @@ ACTIONS = {
     "look-up.processed.png": (9, 8),
     "look-down.processed.png": (10, 8),
     "drag.processed.png": (0, 1),
-    "window-perch.processed.png": (0, 1),
 }
 
 

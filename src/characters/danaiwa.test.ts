@@ -10,7 +10,6 @@ test("大奶蛙配置复用 Codex v2 图集并覆盖运行时动作", () => {
     climb: "walk",
     drag: "drag",
     reminder: "reminder",
-    windowPerch: "windowPerch",
   });
   assert.deepEqual(danaiwa.actions.idle, {
     asset: "idle.processed.png",

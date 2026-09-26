@@ -13,10 +13,6 @@ import type {
 import { createPetRuntime, type PetRuntime } from "./pet-runtime";
 import { petChannels } from "../shared/channels.ts";
 import {
-  createSystemWindowQuery,
-  nativeWindowId,
-} from "./window-query";
-import {
   createReminderOverlay,
   type ReminderOverlay,
 } from "./reminder-overlay";
@@ -98,11 +94,6 @@ export function openPetWindow(options: OpenPetWindowOptions): PetWindowHandle {
     initialPosition: options.initialPosition,
     scale: options.scale,
     cursorPosition: options.cursorPosition,
-    windowQuery: createSystemWindowQuery({
-      ownApplicationName: app.getName(),
-      ownProcessId: process.pid,
-      ownWindowId: nativeWindowId(window),
-    }),
     tickMs: 16,
     onStateChange(state: PetState) {
       reminderOverlay?.syncPosition();

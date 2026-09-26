@@ -39,9 +39,9 @@ Characters can be switched from the settings window. Each character has its own 
 
 | Character | Highlights |
 | --- | --- |
-| Milk Frog | Multiple click actions, gaze tracking, window perching |
+| Milk Frog | Multiple click actions and gaze tracking |
 | Lulu | Waving, running, and head patting |
-| Big Milk Frog | Multiple animated actions, gaze tracking, window perching |
+| Big Milk Frog | Multiple animated actions and gaze tracking |
 | Luo Xiaohei | Waving and the Heixiu action |
 
 Character differences are wired through configuration, so more characters and actions can be added later.
@@ -50,7 +50,6 @@ Character differences are wired through configuration, so more characters and ac
 
 - Click the pet to randomly switch to one of the current character's click actions;
 - Drag the pet with the mouse;
-- Some characters can perch at the top edge of a window;
 - When the user types in another application, the pet enters a typing state and returns to idle after about 1.5 seconds without keyboard activity;
 - Summon the pet to the current mouse cursor position with a keyboard shortcut;
 - Some characters support simple cursor gaze tracking while looking or turning their heads;
@@ -90,7 +89,7 @@ Right-click the pet and open “Settings” to change:
 After launching:
 
 - Click the pet to trigger an action for the current character;
-- Hold and drag the pet to move it; dragging it to the top edge of a supported window makes the character perch there;
+- Hold and drag the pet to move it;
 - Right-click the pet and open chat or the memo from the toolbox;
 - Press `CommandOrControl+Alt+P` by default to summon the pet to the mouse position;
 - Right-click the pet to open settings and change the character, size, theme, position, or shortcut.

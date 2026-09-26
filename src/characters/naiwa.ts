@@ -14,13 +14,11 @@ export const naiwa: CharacterConfig = {
     contentHeight: 180,
     dragAnchor: { x: 94, y: 22 },
     footAnchor: { x: 96, y: 202 },
-    perchAnchorY: 120,
   },
   interactionActions: {
     climb: "climb",
     drag: "drag",
     reminder: "reminder",
-    windowPerch: "windowPerch",
   },
   persona: {
     file: "naiwa.md",
@@ -90,13 +88,6 @@ export const naiwa: CharacterConfig = {
       frameCount: 6,
       frameDurationMs: 140,
       holdFrameIndex: 3,
-    },
-    windowPerch: {
-      anchor: "perch",
-      kind: "sprite",
-      asset: "坐姿.processed.png",
-      frameCount: 5,
-      frameDurationMs: 180,
     },
   },
 };

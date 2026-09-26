@@ -13,13 +13,11 @@ export const danaiwa: CharacterConfig = {
   visual: {
     contentHeight: 180,
     footAnchor: { x: 96, y: 202 },
-    perchAnchorY: 120,
   },
   interactionActions: {
     climb: "walk",
     drag: "drag",
     reminder: "reminder",
-    windowPerch: "windowPerch",
   },
   persona: {
     file: "danaiwa.md",
@@ -98,11 +96,6 @@ export const danaiwa: CharacterConfig = {
       frameCount: 8,
       frameDurationMs: 140,
       holdFrameIndex: 3,
-    },
-    windowPerch: {
-      anchor: "perch",
-      kind: "image",
-      asset: "window-perch.processed.png",
     },
   },
 };
