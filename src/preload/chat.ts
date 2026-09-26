@@ -1,7 +1,14 @@
 import { contextBridge, ipcRenderer } from "electron";
 
-import type { AppTheme, ChatState, SettingsSnapshot } from "../shared/types";
-import { chatChannels, settingsChannels } from "../shared/channels.ts";
+import type {
+  AiConfig,
+  AiConnectionTestResult,
+  AiSettingsSnapshot,
+  AppTheme,
+  ChatState,
+  SettingsSnapshot,
+} from "../shared/types";
+import { aiSettingsChannels, chatChannels, settingsChannels } from "../shared/channels.ts";
 
 export const desktopChatBridge = {
   getState(): Promise<ChatState> {
@@ -15,6 +22,25 @@ export const desktopChatBridge = {
   },
   clear(): Promise<ChatState> {
     return ipcRenderer.invoke(chatChannels.clear);
+  },
+  getAiSettings(): Promise<AiSettingsSnapshot> {
+    return ipcRenderer.invoke(aiSettingsChannels.get);
+  },
+  async saveAiSettings(config: AiConfig, apiKey?: string): Promise<AiSettingsSnapshot> {
+    let snapshot = await ipcRenderer.invoke(aiSettingsChannels.update, config);
+    if (apiKey?.trim()) {
+      snapshot = await ipcRenderer.invoke(aiSettingsChannels.saveApiKey, apiKey);
+    }
+    return snapshot;
+  },
+  removeApiKey(): Promise<AiSettingsSnapshot> {
+    return ipcRenderer.invoke(aiSettingsChannels.removeApiKey);
+  },
+  testAiConnection(
+    config: AiConfig,
+    apiKey?: string,
+  ): Promise<AiConnectionTestResult> {
+    return ipcRenderer.invoke(aiSettingsChannels.test, config, apiKey);
   },
   getTheme(): Promise<AppTheme> {
     return ipcRenderer.invoke(settingsChannels.get).then(

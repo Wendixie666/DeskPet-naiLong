@@ -132,7 +132,7 @@ export interface SettingsSnapshot {
 }
 
 export interface AiConfig {
-  provider: "openai-compatible";
+  provider: "openai-compatible" | "deepseek";
   baseUrl: string;
   model: string;
 }

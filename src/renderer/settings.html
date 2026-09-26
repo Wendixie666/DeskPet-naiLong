@@ -50,36 +50,6 @@
           <small>例如 CommandOrControl+Alt+P</small>
         </label>
 
-        <fieldset class="ai-settings">
-          <legend>AI 配置</legend>
-          <label>
-            <span>接口类型</span>
-            <input value="OpenAI Compatible" readonly />
-          </label>
-
-          <label>
-            <span>Base URL</span>
-            <input id="ai-base-url" type="url" placeholder="https://api.openai.com/v1" />
-          </label>
-
-          <label>
-            <span>Model</span>
-            <input id="ai-model" placeholder="例如 gpt-4o-mini" />
-          </label>
-
-          <label>
-            <span>API Key</span>
-            <input id="ai-api-key" type="password" autocomplete="new-password" />
-            <small id="ai-key-status">未配置</small>
-          </label>
-
-          <div class="ai-actions">
-            <button id="test-ai" type="button">测试连接</button>
-            <button id="remove-ai-key" type="button">删除 API Key</button>
-          </div>
-          <p id="ai-status" role="status"></p>
-        </fieldset>
-
         <div class="actions">
           <p id="status" role="status"></p>
           <button type="submit">保存并应用</button>

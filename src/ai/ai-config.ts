@@ -42,7 +42,7 @@ export function normalizeAiConfig(value: unknown): AiConfig {
 
   const candidate = value as Partial<AiConfig>;
   return {
-    provider: candidate.provider === "openai-compatible"
+    provider: candidate.provider === "openai-compatible" || candidate.provider === "deepseek"
       ? candidate.provider
       : defaultAiConfig.provider,
     baseUrl: normalizeBaseUrl(candidate.baseUrl),
@@ -58,8 +58,8 @@ export function validateAiConfig(value: unknown): AiConfig {
   }
 
   const candidate = value as Partial<AiConfig>;
-  if (candidate.provider !== "openai-compatible") {
-    throw new Error("暂只支持 OpenAI Compatible");
+  if (candidate.provider !== "openai-compatible" && candidate.provider !== "deepseek") {
+    throw new Error("暂只支持 OpenAI Compatible 和 DeepSeek");
   }
   if (!isBaseUrl(candidate.baseUrl)) {
     throw new Error("Base URL 必须是有效的 HTTP 或 HTTPS 地址");

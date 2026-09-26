@@ -2,8 +2,9 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("node:path");
 
 const projectRoot = path.resolve(__dirname, "..");
-const characterModuleName = process.env.DESKPET_RENDER_CHARACTER === "danaiwa"
-  ? "danaiwa"
+const renderCharacter = process.env.DESKPET_RENDER_CHARACTER;
+const characterModuleName = renderCharacter === "danaiwa" || renderCharacter === "xiaohei"
+  ? renderCharacter
   : "naiwa";
 const character = require(path.join(
   projectRoot,
@@ -132,6 +133,17 @@ app.whenReady().then(async () => {
   });
   await new Promise((resolve) => setTimeout(resolve, 200));
   const lookVisiblePixels = await visiblePixelCount(window);
+  let laughVisiblePixels = 0;
+  if (character.actions.laugh) {
+    window.webContents.send("pet:state", {
+      action: "laugh",
+      facing: "right",
+      isMoving: false,
+      position: { x: 0, y: 0 },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    laughVisiblePixels = await visiblePixelCount(window);
+  }
   window.webContents.send("pet:state", {
     action: "reminder",
     facing: "right",
@@ -252,6 +264,7 @@ app.whenReady().then(async () => {
     reminderVisiblePixels,
     walkVisiblePixels,
     lookVisiblePixels,
+    laughVisiblePixels,
   };
   console.log(JSON.stringify(result));
 
@@ -274,6 +287,7 @@ app.whenReady().then(async () => {
     || reminderVisiblePixels < 1_000
     || walkVisiblePixels < 1_000
     || (character.trackingAction !== undefined && lookVisiblePixels < 1_000)
+    || (character.actions.laugh !== undefined && laughVisiblePixels < 1_000)
   ) {
     app.exit(1);
     return;

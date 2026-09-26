@@ -31,8 +31,10 @@
 - AI 第一阶段配置独立于 `AppSettings`：普通配置写入 `userData/ai-config.json`，API Key 通过 Electron `safeStorage` 写入 `userData/ai-api-key.bin`；设置 preload 只暴露 `hasApiKey`，测试连接由 main 进程发起。
 - 设置窗口的完整保存通过 `settings:save` 由 main 侧 `SettingsCoordinator` 编排；preload 的 `desktopSettings` 类型从 `desktopSettingsBridge` 推导，renderer 不再手写 bridge interface。
 - AI 第二、三阶段：`src/ai/chat-service.ts` 负责按当前角色重新拼接 Markdown 人设和维护内存多轮记录，`openai-compatible-provider.ts` 只负责 OpenAI-compatible SSE 流式请求；聊天请求仍只从 main 经 `chat:*` IPC 发出，preload 不暴露 API Key。人设文件位于 `src/characters/personas/`，打包资源需保留该目录；聊天窗口由 `main/chat-window.ts` 独立管理，桌宠右键工具箱提供“聊天”入口。
+- 聊天相关 AI 配置位于聊天窗口右上角的设置面板，不再显示在桌宠设置页；`AiConfig.provider` 支持 `deepseek`，DeepSeek 预设使用 OpenAI-compatible Chat Completions 接口，API Key 仍由 main 侧安全存储。
 - 聊天页面的角色差异通过 `CharacterConfig.chatUi` 和 `ChatState.chatUi` 表达；当前只配置标题与空状态文案，`renderer/chat.ts` 根据状态更新页面标题、窗口标题和空状态，输入框 placeholder 保持通用。
 - 窗口顶部停靠由 `PetRuntime` 在拖拽释放后通过 `main/window-query` 查询系统窗口；停靠候选使用主进程提供的松手时鼠标屏幕坐标，不使用桌宠脚部锚点，`pet/window-perch` 负责候选判断、边界比较和停靠位置，`PetMotion` 只管理 `windowPerch` 动作门控。目标窗口 bounds 变化、关闭、最小化或用户再次拖动时，runtime 清理 150ms 监测 interval 并恢复 idle。
 - 角色可通过 `CharacterInteractionActions.windowPerch`、`CharacterVisual.perchAnchorY` 和动作的 `anchor: "perch"` 提供停靠动画与锚点；当前奶蛙使用 5 帧 `坐姿.processed.png`，原始素材仍放在 `素材/奶蛙/坐姿.png`。
 - Lulu 已通过 `src/characters/lulu.ts` 接入；idle、drag、typing 使用 `素材/噜噜/` 原始素材，walk、wave 使用同目录下按奶蛙方式逐帧裁切并底部对齐的 `.processed.png` 素材；当前未配置提醒、转头或窗口停靠专属动作，打包清单需包含 `素材/噜噜/**/*`。
-- 大奶蛙通过 `src/characters/danaiwa.ts` 接入；原始 `素材/大奶蛙/spritesheet.webp` 保留为来源，运行时使用 `tools/preprocess_danaiwa.py` 生成并对齐到当前项目约定的横向透明素材，16 方向注视使用 `directionalMode: "direct-16"`，打包清单需包含 `素材/大奶蛙/**/*`。
+- 大奶蛙通过 `src/characters/danaiwa.ts` 接入；原始 `素材/大奶蛙/spritesheet.webp` 和新增的 `素材/大奶蛙/大笑.gif` 保留为来源，运行时使用 `tools/preprocess_danaiwa.py` 生成并对齐到当前项目约定的横向透明素材，16 方向注视使用 `directionalMode: "direct-16"`，大笑动作使用 61 帧 `laugh.processed.png`，打包清单需包含 `素材/大奶蛙/**/*`。
+- 罗小黑通过 `src/characters/xiaohei.ts` 接入，第一批动作使用 `素材/罗小黑/` 下的正常待机、奔跑、打招呼、玩嘿咻和拖拽蠕动素材；拖拽映射到 `wiggle`，当前点击动作是 `wave` 和 `playHeixiu`，打包清单需包含 `素材/罗小黑/**/*`。

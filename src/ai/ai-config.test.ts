@@ -38,6 +38,18 @@ test("AI 配置校验要求 HTTP 地址和模型", () => {
   );
 });
 
+test("AI 配置支持 DeepSeek 服务商", () => {
+  assert.deepEqual(validateAiConfig({
+    provider: "deepseek",
+    baseUrl: "https://api.deepseek.com",
+    model: "deepseek-flash",
+  }), {
+    provider: "deepseek",
+    baseUrl: "https://api.deepseek.com",
+    model: "deepseek-flash",
+  });
+});
+
 test("AI 普通配置单独持久化且不包含 API Key", () => {
   const directory = mkdtempSync(path.join(tmpdir(), "deskpet-ai-config-"));
   const filePath = path.join(directory, "ai-config.json");

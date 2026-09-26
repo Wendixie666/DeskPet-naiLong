@@ -42,6 +42,13 @@ header,
   gap: 16px;
 }
 
+.header-actions,
+.settings-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .eyebrow {
   margin: 0 0 4px;
   color: var(--accent-color);
@@ -53,6 +60,66 @@ header,
 h1 {
   margin: 0;
   font-size: 26px;
+}
+
+.chat-settings {
+  padding: 14px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--surface-background);
+}
+
+.chat-settings form {
+  display: grid;
+  gap: 12px;
+}
+
+.settings-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-heading h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.settings-heading span,
+.chat-settings small {
+  color: var(--muted-color);
+  font-size: 12px;
+}
+
+.chat-settings label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.chat-settings input,
+.chat-settings select {
+  min-height: 34px;
+  padding: 6px 9px;
+  color: var(--text-color);
+  background: var(--page-background);
+}
+
+.settings-actions {
+  justify-content: flex-end;
+}
+
+#ai-status {
+  min-height: 18px;
+  margin: 0;
+  color: var(--muted-color);
+  font-size: 13px;
+}
+
+#ai-status.error {
+  color: var(--danger-color);
 }
 
 button,

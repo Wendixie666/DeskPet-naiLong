@@ -24,7 +24,7 @@ export const danaiwa: CharacterConfig = {
   persona: {
     file: "danaiwa.md",
   },
-  clickActions: ["wave", "jumping", "waiting", "review"],
+  clickActions: ["wave", "jumping", "waiting", "review", "laugh"],
   trackingAction: "look",
   actions: {
     idle: {
@@ -74,6 +74,12 @@ export const danaiwa: CharacterConfig = {
       asset: "review.processed.png",
       frameCount: 6,
       frameDurationMs: 140,
+    },
+    laugh: {
+      kind: "sprite",
+      asset: "laugh.processed.png",
+      frameCount: 61,
+      frameDurationMs: 20,
     },
     look: {
       kind: "directional-sprite",

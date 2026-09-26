@@ -25,6 +25,12 @@ test("大奶蛙配置复用 Codex v2 图集并覆盖运行时动作", () => {
     kind: "directional-sprite",
     directionalMode: "direct-16",
   });
+  assert.deepEqual(danaiwa.actions.laugh, {
+    asset: "laugh.processed.png",
+    frameCount: 61,
+    frameDurationMs: 20,
+    kind: "sprite",
+  });
   for (const action of danaiwa.clickActions) {
     assert.ok(danaiwa.actions[action]);
   }

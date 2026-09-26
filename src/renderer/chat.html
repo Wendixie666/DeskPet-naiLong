@@ -16,8 +16,47 @@
         <div>
           <h1 id="chat-title">角色聊天</h1>
         </div>
-        <button id="clear-chat" class="quiet-button" type="button">新聊天</button>
+        <div class="header-actions">
+          <button id="open-chat-settings" class="quiet-button" type="button" aria-expanded="false">
+            设置
+          </button>
+          <button id="clear-chat" class="quiet-button" type="button">新聊天</button>
+        </div>
       </header>
+      <section id="chat-settings" class="chat-settings" hidden>
+        <form id="chat-settings-form">
+          <div class="settings-heading">
+            <h2>聊天设置</h2>
+            <span id="ai-key-status">未配置 API Key</span>
+          </div>
+          <label>
+            <span>服务商</span>
+            <select id="ai-provider">
+              <option value="deepseek">DeepSeek</option>
+              <option value="openai-compatible">OpenAI Compatible</option>
+            </select>
+          </label>
+          <label>
+            <span>Base URL</span>
+            <input id="ai-base-url" type="url" placeholder="https://api.deepseek.com" required />
+          </label>
+          <label>
+            <span>Model</span>
+            <input id="ai-model" placeholder="例如 deepseek-flash" required />
+          </label>
+          <label>
+            <span>API Key</span>
+            <input id="ai-api-key" type="password" autocomplete="new-password" />
+            <small>留空表示继续使用已保存的 Key</small>
+          </label>
+          <div class="settings-actions">
+            <button id="test-ai" class="quiet-button" type="button">测试连接</button>
+            <button id="remove-ai-key" class="quiet-button" type="button">删除 API Key</button>
+            <button id="save-ai" class="primary-button" type="submit">保存</button>
+          </div>
+          <p id="ai-status" role="status"></p>
+        </form>
+      </section>
       <section id="messages" class="messages" aria-live="polite"></section>
       <p id="empty-state" class="empty-state">暂无聊天记录</p>
       <p id="status" class="status" role="status"></p>
