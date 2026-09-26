@@ -288,9 +288,6 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
     },
 
     startPat() {
-      if (isWindowPerched()) {
-        return;
-      }
       const action = options.character.interactionActions?.pat;
       if (!action) {
         return;
@@ -301,9 +298,6 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
     },
 
     triggerReminder() {
-      if (isWindowPerched()) {
-        return false;
-      }
       const action = options.character.interactionActions?.reminder;
       if (!action || state.action === action || reminderPending) {
         return false;
@@ -318,9 +312,6 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
     },
 
     endReminder() {
-      if (isWindowPerched()) {
-        return;
-      }
       if (state.action !== options.character.interactionActions?.reminder) {
         return;
       }
@@ -331,9 +322,6 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
     },
 
     tick(deltaMs) {
-      if (isWindowPerched()) {
-        return;
-      }
       typingActivityRemainingMs = Math.max(
         typingActivityRemainingMs - deltaMs,
         0,
