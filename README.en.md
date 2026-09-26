@@ -2,9 +2,9 @@
 
 [简体中文](./README.md) | English
 
-A desktop pet built with Electron, TypeScript, and vanilla HTML/CSS. The current star is the Milk Frog: it sits on your desktop and responds to clicks, dragging, and a summon shortcut.
+A desktop pet built with Electron, TypeScript, and vanilla HTML/CSS. It currently includes four characters—Milk Frog, Lulu, Big Milk Frog, and Luo Xiaohei—as well as character chat, a memo, and deadline reminders.
 
-> The project is in early development. The current character is the Milk Frog; Bull, the Meituan kangaroo, and custom characters are planned for later.
+> The project is in early development. Some platform capabilities and visual effects may still vary by system.
 
 ## Quick Start
 
@@ -17,10 +17,10 @@ A desktop pet built with Electron, TypeScript, and vanilla HTML/CSS. The current
 If Node.js is not installed yet, download it from the [Node.js website](https://nodejs.org/en/download).
 
 On Windows, you can also run this in PowerShell or Command Prompt:
+
 ```powershell
 winget install --id OpenJS.NodeJS.LTS -e
 ```
-
 
 ### Install and Launch
 
@@ -33,27 +33,53 @@ Dependencies are installed only into this repository's `node_modules`; Electron 
 
 ## Current Features
 
-- The Milk Frog has different forms and actions; click it to switch actions;
+### Characters
+
+Characters can be switched from the settings window. Each character has its own actions, assets, and chat persona:
+
+| Character | Highlights |
+| --- | --- |
+| Milk Frog | Multiple click actions, gaze tracking, window perching |
+| Lulu | Waving, running, and head patting |
+| Big Milk Frog | Multiple animated actions, gaze tracking, window perching |
+| Luo Xiaohei | Waving and the Heixiu action |
+
+Character differences are wired through configuration, so more characters and actions can be added later.
+
+### Pet Interaction
+
+- Click the pet to randomly switch to one of the current character's click actions;
+- Drag the pet with the mouse;
+- Some characters can perch at the top edge of a window;
+- When the user types in another application, the pet enters a typing state and returns to idle after about 1.5 seconds without keyboard activity;
+- Summon the pet to the current mouse cursor position with a keyboard shortcut;
+- Some characters support simple cursor gaze tracking while looking or turning their heads;
+- Right-click the pet to open the toolbox, settings, or quit menu.
 
 <p align="center">
   <img src="image.png" width="500">
 </p>
 
-- Drag with the mouse to move the pet around;
+### Toolbox
 
-- Summon the pet to the current mouse cursor position with a keyboard shortcut;
+- **Character chat**: Chat with the selected character using its persona, with streaming replies and a new-chat action;
+- **Memo**: Create, edit, complete, and delete todo items;
+- **Deadline reminders**: Set a date or a specific time for a todo. When it is due, the pet shows a reminder card; characters without a reminder action fall back to a system notification;
+- **AI configuration**: Supports DeepSeek and OpenAI Compatible services with configurable Base URL, Model, and API Key.
 
 <p align="center">
   <img src="image-1.png" width="500">
 </p>
 
-- In the head-turning state, simple gaze tracking of the cursor is supported;
+### Settings
 
-<p align="center">
-  <img src="屏幕截图 2026-08-24 180151.png" width="500">
-</p>
+Right-click the pet and open “Settings” to change:
 
-- Right-click the pet to open the settings window, where you can change the character, pet size, default position, and the summon shortcut.
+- The current character;
+- Pet size;
+- Light or dark interface theme;
+- Whether the pet starts at the bottom-right corner or at its last position;
+- The summon shortcut.
 
 <p align="center">
   <img src="image-2.png" width="500">
@@ -63,10 +89,11 @@ Dependencies are installed only into this repository's `node_modules`; Electron 
 
 After launching:
 
-- Click the Milk Frog to randomly switch actions;
-- Hold and drag the Milk Frog to change the pet's position;
+- Click the pet to trigger an action for the current character;
+- Hold and drag the pet to move it; dragging it to the top edge of a supported window makes the character perch there;
+- Right-click the pet and open chat or the memo from the toolbox;
 - Press `CommandOrControl+Alt+P` by default to summon the pet to the mouse position;
-- Right-click the Milk Frog to open the settings window.
+- Right-click the pet to open settings and change the character, size, theme, position, or shortcut.
 
 The shortcut on each system:
 
@@ -76,12 +103,23 @@ The shortcut on each system:
 | macOS | `Command+Option+P` |
 | Linux | `Ctrl+Alt+P` |
 
+### Configure Character Chat
+
+1. Right-click the pet and choose “Toolbox > Chat”;
+2. Click “Settings” in the top-right corner of the chat window;
+3. Choose `DeepSeek` or `OpenAI Compatible`, then enter the Base URL, Model, and API Key;
+4. Click “Test Connection” and save after the connection succeeds.
+
+For DeepSeek, use `https://api.deepseek.com` as the Base URL. For another OpenAI-compatible service, use the URL provided by that service. The API Key is not exposed in settings snapshots; the app attempts to store it using the operating system's secure storage.
+
 ## Platform Notes
 
-Target platforms are Windows, macOS, and Linux X11/XWayland, but development and debugging have so far only been tried on Windows and Linux; macOS may still have bugs.
+Target platforms are Windows, macOS, and Linux X11/XWayland, but development and debugging have so far been focused on Windows and Linux; macOS may still have compatibility issues.
 
 - Windows, macOS, and Linux X11/XWayland support the full window-move and summon flow;
-- X11 or XWayland is recommended on Linux. Native Wayland does not guarantee programmatic window positioning, resizing, or frame-by-frame movement;
+- Global keyboard activity monitoring uses `uiohook-napi`. On macOS, allow the app under “System Settings > Privacy & Security > Input Monitoring” on first use; if your system lists it under “Accessibility”, allow it there as well. The app only observes keyboard activity signals and does not record specific keys;
+- Native Wayland does not guarantee global keyboard activity monitoring; use X11 or XWayland on Linux;
+- Native Wayland also does not guarantee programmatic window positioning, resizing, or frame-by-frame movement;
 - On Debian/Ubuntu, if startup complains about missing system libraries, install:
 
   ```bash
@@ -89,28 +127,40 @@ Target platforms are Windows, macOS, and Linux X11/XWayland, but development and
   ```
 
 - The settings window's transparent theme and system materials are platform-specific visual enhancements and may not look identical on every system; the acrylic system material is currently enabled on Windows only;
+- If system secure storage is unavailable, the app will not save the AI API Key;
 - On macOS, the app keeps running after the pet window is closed and can be reactivated from the Dock; use `Command+Q` to quit the app.
 
 ## Development and Verification
 
-Run tests, type checks, and builds:
+Run tests, type checks, builds, and the render check:
 
 ```bash
 npm test
 npm run typecheck
 npm run build
+npm run test:render
 ```
 
-Python 3 and Pillow are only needed when you modify the original blue-screen images under `素材/奶蛙` and regenerate the transparent Sprite Sheets.
+Package the app for the current platform:
+
+```bash
+npm run package
+```
+
+Use `npm run package:win`, `npm run package:mac`, or `npm run package:linux` to target a specific platform.
+
+### Character Assets
+
+Python 3 and Pillow are only needed when you modify original character images and regenerate transparent Sprite Sheets.
 
 Asset directory conventions:
 
-- `素材/奶蛙/*.png`: original blue-screen assets; used only as preprocessing input, never read directly by the renderer;
-- `素材/奶蛙/processed/*.processed.png`: transparent Sprite Sheets read at runtime;
-- `素材/奶蛙/processed/*.processed.debug.png`: preview images with frame boundaries and anchor guides; not read by the renderer;
-- `素材/奶蛙/processed/all-states.gif`: finished GIF used directly by the current idle action.
+- `素材/<character>/*`: original images or character assets;
+- `素材/奶蛙/processed/*`: transparent Sprite Sheets read at runtime by Milk Frog;
+- `素材/大奶蛙/processed/*` and `素材/罗小黑/processed/*`: processed assets read at runtime by those characters;
+- `*.processed.debug.png`: preview images with frame boundaries and anchor guides; not read by the renderer.
 
-After modifying original assets, regenerate the corresponding processed files and make sure the frame count matches `frameCount` in the character config:
+After modifying original assets, run the corresponding preprocessing script and make sure the generated frame count matches `frameCount` in the character config:
 
 ```bash
 python -m pip install Pillow
@@ -118,13 +168,12 @@ python tools/preprocess_sprite.py --help
 python tools/preprocess_sprite_test.py
 ```
 
-Some Linux/macOS environments need `python3` instead; on Windows you can use `py -m pip` and `py tools/preprocess_sprite.py`.
+Some Linux/macOS environments need `python3` instead; on Windows you can use `py -m pip` and `py tools/preprocess_sprite.py`. Big Milk Frog and Luo Xiaohei also have dedicated scripts at `tools/preprocess_danaiwa.py` and `tools/preprocess_xiaohei.py`.
 
-The preprocessing script only runs when assets change; the pet does not call it at startup and does not regenerate character assets from the original blue-screen images.
+The preprocessing scripts only run when assets change; the pet does not regenerate character assets at startup.
 
 ## Project Docs
 
-- [Launch & Verification Commands](./启动指令.md)
 - [Desktop Pet Technology Research](./docs/research/desktop-pet-technology.md)
 - [Electron Cross-Platform Compatibility Review](./docs/research/cross-platform-electron.md)
 - [README Structure Reference](./docs/research/readme-patterns.md)
@@ -135,7 +184,8 @@ The preprocessing script only runs when assets change; the pet does not call it 
 - TypeScript 5.8
 - Vanilla HTML/CSS
 - Canvas Sprite Sheet rendering
+- OpenAI-compatible Chat Completions service interface
 
 ## Design Direction
 
-Character differences are expressed via `CharacterRegistry` and `CharacterConfig`, keeping window control, pet movement, and rendering responsibilities separate. When adding new characters later, prefer wiring them in through character config rather than scattering character checks across window and rendering logic.
+Character differences are expressed via `CharacterRegistry` and `CharacterConfig`, while character personas are defined by Markdown files under `src/characters/personas/`. Window control, pet movement, rendering, and chat services remain separated. When adding a character, prefer wiring it through its character config, assets, and persona file rather than scattering character checks across window and rendering logic.
