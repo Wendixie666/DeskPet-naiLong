@@ -1,6 +1,8 @@
 import { app, BrowserWindow } from "electron";
 import path from "node:path";
 
+import { loadRendererPage } from "./window-loader";
+
 let settingsWindow: BrowserWindow | undefined;
 
 export function showSettingsWindow(): void {
@@ -15,6 +17,7 @@ export function showSettingsWindow(): void {
     minWidth: 420,
     minHeight: 620,
     title: "桌宠设置",
+    show: false,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -23,7 +26,7 @@ export function showSettingsWindow(): void {
     },
   });
   settingsWindow.setMenuBarVisibility(false);
-  settingsWindow.loadFile(path.join(app.getAppPath(), "src/renderer/settings.html"));
+  void loadRendererPage(settingsWindow, "settings.html", app.getAppPath());
   settingsWindow.on("closed", () => {
     settingsWindow = undefined;
   });

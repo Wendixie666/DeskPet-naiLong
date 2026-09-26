@@ -16,6 +16,7 @@ import {
   createReminderOverlay,
   type ReminderOverlay,
 } from "./reminder-overlay";
+import { loadRendererPage } from "./window-loader";
 
 export interface OpenPetWindowOptions {
   character: CharacterConfig;
@@ -124,8 +125,7 @@ export function openPetWindow(options: OpenPetWindowOptions): PetWindowHandle {
     },
   });
 
-  window.loadFile(path.join(app.getAppPath(), "src/renderer/index.html"));
-  window.once("ready-to-show", () => window.show());
+  void loadRendererPage(window, "index.html", app.getAppPath());
 
   window.on("closed", () => {
     runtime.dispose();

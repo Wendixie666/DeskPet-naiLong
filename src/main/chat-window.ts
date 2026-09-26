@@ -1,6 +1,8 @@
 import { app, BrowserWindow } from "electron";
 import path from "node:path";
 
+import { loadRendererPage } from "./window-loader";
+
 let chatWindow: BrowserWindow | undefined;
 let onChatWindowClosed: () => void = () => {};
 
@@ -19,6 +21,7 @@ export function showChatWindow(): void {
     height: 720,
     minWidth: 480,
     minHeight: 500,
+    show: false,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -27,7 +30,7 @@ export function showChatWindow(): void {
     },
   });
   chatWindow.setMenuBarVisibility(false);
-  chatWindow.loadFile(path.join(app.getAppPath(), "src/renderer/chat.html"));
+  void loadRendererPage(chatWindow, "chat.html", app.getAppPath());
   chatWindow.on("closed", () => {
     chatWindow = undefined;
     onChatWindowClosed();

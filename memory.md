@@ -16,6 +16,7 @@
 - 打包用 electron-builder（配置在 package.json `build` 字段）：产物输出 `release/`（与 TS 的 `dist/` 区分），`files` 必须包含 `dist/**`、`src/renderer/**`、`素材/奶蛙/processed/**`（排除 debug 图）；Windows NSIS 使用向导安装模式，提供安装/卸载进度、桌面和开始菜单快捷方式；mac 目标 dmg/arm64，扩展 x64/universal 用 CLI `--x64`/`--universal` 或改 arch 数组；签名/公证走 `CSC_LINK`、`APPLE_ID`+`APPLE_APP_SPECIFIC_PASSWORD` 等环境变量，未写死。
 - 应用图标由 `tools/make_icons.py`（Pillow）从 `素材/奶蛙/default.jpeg` 生成 `build/icon.png/.ico/.icns`，脚本内含右下角水印的纵向渐变覆盖处理；素材更换后需重跑。
 - 主进程模块划分：快捷键注册在 `main/summon-shortcut`（注入 registrar 可测），桌宠窗口创建+runtime 装配在 `main/pet-window-create`（tick 定时器由 runtime 自驱，窗口关闭时 `runtime.dispose()`），设置窗口在 `main/settings-window`，`main/index.ts` 只剩装配与生命周期。
+- 主进程的设置、聊天、备忘录和桌宠窗口统一通过 `main/window-loader` 加载 renderer 页面；窗口在 `loadFile` 成功后显示，加载失败记录诊断并保持隐藏。
 - 主进程使用 Electron 单实例锁；重复启动时聚焦已有桌宠窗口，不再创建第二个桌宠进程。
 - 脚底中心几何换算集中在纯函数模块 `pet/geometry`：召唤路径（motion）与缩放路径（pet-window）共用 `scaledFootAnchor`/`constrainPosition`，禁止再各自实现 clamp 公式。
 - IPC 通道名单一事实来源在 `shared/channels.ts`（含推送通道 pet:state / pet:snapshot-changed）；renderer 的 `global.d.ts` 用 `typeof import("../preload/index").desktopPetBridge` 引用 preload bridge 类型；`pet:summon` 通道已删除（召唤只走主进程全局快捷键）。

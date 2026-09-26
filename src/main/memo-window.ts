@@ -3,6 +3,7 @@ import path from "node:path";
 
 import type { AppTheme } from "../shared/types";
 import { settingsChannels } from "../shared/channels.ts";
+import { loadRendererPage } from "./window-loader";
 
 let memoWindow: BrowserWindow | undefined;
 
@@ -18,6 +19,7 @@ export function showMemoWindow(): void {
     minWidth: 460,
     minHeight: 420,
     title: "奶蛙备忘录",
+    show: false,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -26,7 +28,7 @@ export function showMemoWindow(): void {
     },
   });
   memoWindow.setMenuBarVisibility(false);
-  memoWindow.loadFile(path.join(app.getAppPath(), "src/renderer/memo.html"));
+  void loadRendererPage(memoWindow, "memo.html", app.getAppPath());
   memoWindow.on("closed", () => {
     memoWindow = undefined;
   });
