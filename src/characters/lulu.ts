@@ -12,6 +12,7 @@ export const lulu: CharacterConfig = {
   speed: 260,
   visual: {
     contentHeight: 280,
+    dragAnchor: { x: 229, y: 62 },
     footAnchor: { x: 180, y: 315 },
     headInteraction: { x: 60, y: 20, width: 240, height: 120 },
   },

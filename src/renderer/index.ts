@@ -12,6 +12,8 @@ interface PointerGesture {
   lastY: number;
   moved: number;
   pointerId: number;
+  startX: number;
+  startY: number;
 }
 
 let gesture: PointerGesture | undefined;
@@ -64,6 +66,8 @@ petElement.addEventListener("pointerdown", (event) => {
     lastY: event.screenY,
     moved: 0,
     pointerId: event.pointerId,
+    startX: event.screenX,
+    startY: event.screenY,
   };
   if (gesture.isHead) {
     window.desktopPet.startPat();
@@ -85,6 +89,9 @@ petElement.addEventListener("pointermove", (event) => {
     if (gesture.isHead) {
       window.desktopPet.endPat();
       gesture.isHead = false;
+    }
+    if (gesture.moved - Math.hypot(deltaX, deltaY) < 4) {
+      window.desktopPet.startDrag(gesture.startX, gesture.startY);
     }
     window.desktopPet.dragBy(deltaX, deltaY);
   }

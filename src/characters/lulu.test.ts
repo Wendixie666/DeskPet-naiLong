@@ -12,6 +12,7 @@ test("噜噜配置提供现有素材对应的基础动作", () => {
   assert.equal(lulu.actions.drag.asset, "被提起.png");
   assert.equal(lulu.actions.typing.asset, "打字.png");
   assert.equal(lulu.actions.typing.frameCount, 6);
+  assert.deepEqual(lulu.visual.dragAnchor, { x: 229, y: 62 });
   assert.deepEqual(lulu.interactionActions, {
     climb: "walk",
     drag: "drag",

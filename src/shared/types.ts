@@ -23,6 +23,7 @@ export interface VisualAdjustment {
 
 export interface CharacterVisual {
   contentHeight: number;
+  dragAnchor?: Point;
   footAnchor: Point;
   headInteraction?: Bounds;
   perchAnchorY?: number;

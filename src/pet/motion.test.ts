@@ -275,6 +275,38 @@ test("真正拖动期间保持 drag，松开后恢复 idle", () => {
   assert.deepEqual(states, ["drag", "drag", "idle"]);
 });
 
+test("开始拖拽时将被提起尖尖对齐到鼠标", () => {
+  let position: [number, number] = [100, 200];
+  const motion = createPetMotion({
+    character: {
+      clickActions: ["wave"],
+      interactionActions: { climb: "climb", drag: "drag", pat: "pat" },
+      speed: 100,
+      visual: {
+        contentHeight: 180,
+        footAnchor: { x: 96, y: 202 },
+        dragAnchor: { x: 94, y: 22 },
+      },
+    },
+    initialPosition: { x: 100, y: 200 },
+    onStateChange() {},
+    scale: 1,
+    window: {
+      getBounds: () => ({ x: position[0], y: position[1], width: 192, height: 208 }),
+      getPosition: () => position,
+      setPosition(x, y) {
+        position = [x, y];
+      },
+      workAreaAt: () => ({ x: 0, y: 0, width: 1_920, height: 1_040 }),
+    },
+  });
+
+  motion.startDrag({ x: 300, y: 400 });
+
+  assert.deepEqual(position, [206, 378]);
+  assert.equal(motion.getState().action, "drag");
+});
+
 test("松开在左右屏幕边缘时分别吸附并面向屏幕内侧攀爬", () => {
   let position: [number, number] = [100, 200];
   const motion = createPetMotion({

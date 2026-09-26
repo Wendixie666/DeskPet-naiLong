@@ -3,7 +3,7 @@ import type { CharacterConfig } from "../shared/types";
 export const xiaohei: CharacterConfig = {
   id: "xiaohei",
   name: "罗小黑",
-  assetRoot: "../../素材/罗小黑",
+  assetRoot: "../../素材/罗小黑/processed",
   chatUi: {
     title: "和罗小黑聊聊天",
     emptyState: "跟罗小黑说点什么吧",
@@ -25,23 +25,32 @@ export const xiaohei: CharacterConfig = {
   actions: {
     idle: {
       kind: "image",
-      asset: "main-base.png",
+      asset: "idle-hd.png",
+      adjustment: { scale: 0.87 },
     },
     walk: {
-      kind: "image",
-      asset: "main-run.gif",
+      kind: "sprite",
+      asset: "walk.processed.png",
+      frameCount: 12,
+      frameDurationMs: 80,
     },
     wave: {
-      kind: "image",
-      asset: "main-wave.gif",
+      kind: "sprite",
+      asset: "wave.processed.png",
+      frameCount: 34,
+      frameDurationMs: 80,
     },
     playHeixiu: {
-      kind: "image",
-      asset: "main-play-heixiu.gif",
+      kind: "sprite",
+      asset: "play-heixiu.processed.png",
+      frameCount: 8,
+      frameDurationMs: 80,
     },
     wiggle: {
-      kind: "image",
-      asset: "main-wiggle.gif",
+      kind: "sprite",
+      asset: "wiggle.processed.png",
+      frameCount: 11,
+      frameDurationMs: 70,
     },
   },
 };

@@ -34,6 +34,9 @@ test("注册全部宠物与设置通道", () => {
     },
     getSettings: () => ({ settings: {} }) as never,
     snapshot: () => ({}) as never,
+    startDrag() {
+      calls.push("startDrag");
+    },
     startPat() {
       calls.push("startPat");
     },
@@ -50,6 +53,7 @@ test("注册全部宠物与设置通道", () => {
     petChannels.contextMenu,
     petChannels.dragBy,
     petChannels.dragEnd,
+    petChannels.dragStart,
     petChannels.patEnd,
     petChannels.patStart,
   ]);

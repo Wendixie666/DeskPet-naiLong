@@ -12,6 +12,7 @@ export const naiwa: CharacterConfig = {
   speed: 260,
   visual: {
     contentHeight: 180,
+    dragAnchor: { x: 94, y: 22 },
     footAnchor: { x: 96, y: 202 },
     perchAnchorY: 120,
   },

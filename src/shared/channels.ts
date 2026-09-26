@@ -3,6 +3,7 @@ export const petChannels = {
   contextMenu: "pet:context-menu",
   dragBy: "pet:drag-by",
   dragEnd: "pet:drag-end",
+  dragStart: "pet:drag-start",
   patEnd: "pet:pat-end",
   patStart: "pet:pat-start",
   snapshot: "pet:snapshot",

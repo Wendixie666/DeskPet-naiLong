@@ -10,6 +10,9 @@ export const desktopPetBridge = {
   dragBy(deltaX: number, deltaY: number): void {
     ipcRenderer.send(petChannels.dragBy, deltaX, deltaY);
   },
+  startDrag(x: number, y: number): void {
+    ipcRenderer.send(petChannels.dragStart, x, y);
+  },
   endDrag(): void {
     ipcRenderer.send(petChannels.dragEnd);
   },

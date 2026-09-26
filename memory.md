@@ -19,6 +19,7 @@
 - IPC 通道名单一事实来源在 `shared/channels.ts`（含推送通道 pet:state / pet:snapshot-changed）；renderer 的 `global.d.ts` 用 `typeof import("../preload/index").desktopPetBridge` 引用 preload bridge 类型；`pet:summon` 通道已删除（召唤只走主进程全局快捷键）。
 - renderer 动画：帧序列纯函数 `directionFrame`/`introFrames` 从 pet-animation 闭包提升为模块导出，directional/sprite/static 三类动作共用单一 rAF 循环。
 - 交互动作由 `CharacterConfig.interactionActions` 注册，`PetMotion` 通过 `startPat/endPat` 和 `dragBy/endDrag` 管理按住生命周期；头部命中区域使用 `CharacterVisual.headInteraction` 的 canvas 局部坐标，renderer 只负责把缩放后的指针坐标换算回 canvas 坐标。
+- 奶蛙和噜噜的被提起动作通过 `CharacterVisual.dragAnchor` 配置 canvas 局部尖尖锚点；拖拽首次越过阈值时，主进程先把该锚点对齐到鼠标，再继续使用增量移动。
 - renderer 手势只接受首个 `pointerId`，并在 `pointerup/pointercancel/lostpointercapture/blur` 统一结束；配置 `headInteraction` 时必须同时提供 `interactionActions.pat`。
 - 释放拖拽时若窗口距当前工作区左右边缘不超过 24px，`PetMotion` 会吸附到对应边缘，进入 climb 并让角色面向屏幕内侧（左边缘 facing right、右边缘 facing left）；攀爬沿 Y 轴向上移动，到达工作区顶部后恢复 idle。
 - 全局键盘活动由主进程 `KeyboardActivityService` 通过 `uiohook-napi` 转成无参数活动信号，再经 `PetRuntime.keyboardActivity()` 进入 `PetMotion`；普通键盘活动进入 typing，1.5 秒无活动后回 idle，不恢复被打断动作，但召唤/攀爬移动优先于 typing，移动期间忽略键盘活动，召唤开始时清除已有 typing 上下文。Windows/macOS/Linux X11 可用，macOS 需 Input Monitoring/Accessibility 权限，Linux 原生 Wayland 不保证支持；服务失败不阻止桌宠启动，退出时停止 hook。
@@ -38,3 +39,4 @@
 - Lulu 已通过 `src/characters/lulu.ts` 接入；idle、drag、typing 使用 `素材/噜噜/` 原始素材，walk、wave 使用同目录下按奶蛙方式逐帧裁切并底部对齐的 `.processed.png` 素材；当前未配置提醒、转头或窗口停靠专属动作，打包清单需包含 `素材/噜噜/**/*`。
 - 大奶蛙通过 `src/characters/danaiwa.ts` 接入；原始 `素材/大奶蛙/spritesheet.webp` 和新增的 `素材/大奶蛙/大笑.gif` 保留为来源，运行时使用 `tools/preprocess_danaiwa.py` 生成并对齐到当前项目约定的横向透明素材，16 方向注视使用 `directionalMode: "direct-16"`，大笑动作使用 61 帧 `laugh.processed.png`，打包清单需包含 `素材/大奶蛙/**/*`。
 - 罗小黑通过 `src/characters/xiaohei.ts` 接入，第一批动作使用 `素材/罗小黑/` 下的正常待机、奔跑、打招呼、玩嘿咻和拖拽蠕动素材；拖拽映射到 `wiggle`，当前点击动作是 `wave` 和 `playHeixiu`，打包清单需包含 `素材/罗小黑/**/*`。
+- 罗小黑的运行时素材位于 `素材/罗小黑/processed/`；GIF 动作必须先由 `tools/preprocess_xiaohei.py` 转成高分辨率横向 Sprite Sheet，不能直接作为 Canvas `image` 动作，否则只会显示首帧。

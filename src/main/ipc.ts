@@ -1,4 +1,4 @@
-import type { PetSnapshot, SettingsSnapshot } from "../shared/types";
+import type { PetSnapshot, Point, SettingsSnapshot } from "../shared/types";
 import { petChannels, settingsChannels } from "../shared/channels.ts";
 
 export interface PetIpcHandlers {
@@ -9,6 +9,7 @@ export interface PetIpcHandlers {
   endPat(): void;
   getSettings(): SettingsSnapshot;
   snapshot(): PetSnapshot;
+  startDrag(pointer: Point): void;
   startPat(): void;
   updateSettings(value: unknown): SettingsSnapshot;
 }
@@ -25,6 +26,9 @@ export function registerPetIpc(ipc: IpcRegistrar, handlers: PetIpcHandlers): voi
   ipc.on(petChannels.click, () => handlers.click());
   ipc.on(petChannels.dragBy, (_event, deltaX: number, deltaY: number) => {
     handlers.dragBy(deltaX, deltaY);
+  });
+  ipc.on(petChannels.dragStart, (_event, x: number, y: number) => {
+    handlers.startDrag({ x, y });
   });
   ipc.on(petChannels.dragEnd, () => handlers.endDrag());
   ipc.on(petChannels.patEnd, () => handlers.endPat());

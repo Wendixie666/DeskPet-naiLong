@@ -5,7 +5,11 @@ import type {
   PetState,
   Point,
 } from "../shared/types";
-import { constrainPosition, scaledFootAnchor } from "./geometry.ts";
+import {
+  constrainPosition,
+  scaledDragAnchor,
+  scaledFootAnchor,
+} from "./geometry.ts";
 import { resolveLookDirection } from "./look-direction.ts";
 
 export const KEYBOARD_INACTIVITY_TIMEOUT_MS = 1_500;
@@ -39,6 +43,7 @@ export interface PetMotion {
   getState(): PetState;
   keyboardActivity(): void;
   summon(target: Point): void;
+  startDrag(pointer: Point): void;
   startPat(): void;
   tick(deltaMs: number): void;
   triggerReminder(): boolean;
@@ -203,6 +208,26 @@ export function createPetMotion(options: PetMotionOptions): PetMotion {
       state.position = {
         x: x + Math.round(deltaX),
         y: y + Math.round(deltaY),
+      };
+      options.window.setPosition(state.position.x, state.position.y);
+      options.onStateChange(snapshot());
+    },
+
+    startDrag(pointer) {
+      const dragAction = options.character.interactionActions?.drag;
+      const dragAnchor = scaledDragAnchor(
+        options.character,
+        options.scale,
+        state.facing,
+      );
+      if (!dragAction || !dragAnchor) {
+        return;
+      }
+      stopMovement();
+      setAction(dragAction);
+      state.position = {
+        x: Math.round(pointer.x - dragAnchor.x),
+        y: Math.round(pointer.y - dragAnchor.y),
       };
       options.window.setPosition(state.position.x, state.position.y);
       options.onStateChange(snapshot());

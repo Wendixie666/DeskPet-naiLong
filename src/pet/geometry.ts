@@ -1,4 +1,10 @@
-import type { Bounds, CharacterConfig, Point, Size } from "../shared/types";
+import type {
+  Bounds,
+  CharacterConfig,
+  Facing,
+  Point,
+  Size,
+} from "../shared/types";
 
 export function scaledFootAnchor(
   character: Pick<CharacterConfig, "visual">,
@@ -7,6 +13,23 @@ export function scaledFootAnchor(
   return {
     x: character.visual.footAnchor.x * scale,
     y: character.visual.footAnchor.y * scale,
+  };
+}
+
+export function scaledDragAnchor(
+  character: Pick<CharacterConfig, "visual">,
+  scale: number,
+  facing: Facing = "right",
+): Point | undefined {
+  const anchor = character.visual.dragAnchor;
+  if (!anchor) {
+    return undefined;
+  }
+  return {
+    x: (facing === "left"
+      ? character.visual.footAnchor.x * 2 - anchor.x
+      : anchor.x) * scale,
+    y: anchor.y * scale,
   };
 }
 

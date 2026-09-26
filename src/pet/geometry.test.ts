@@ -1,14 +1,33 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { lulu } from "../characters/lulu.ts";
 import { naiwa } from "../characters/naiwa.ts";
-import { constrainPosition, scaledFootAnchor } from "./geometry.ts";
+import {
+  constrainPosition,
+  scaledDragAnchor,
+  scaledFootAnchor,
+} from "./geometry.ts";
 
 test("scaledFootAnchor 按缩放换算脚底中心锚点", () => {
   assert.deepEqual(scaledFootAnchor(naiwa, 1), naiwa.visual.footAnchor);
   assert.deepEqual(scaledFootAnchor(naiwa, 1.5), {
     x: naiwa.visual.footAnchor.x * 1.5,
     y: naiwa.visual.footAnchor.y * 1.5,
+  });
+});
+
+test("scaledDragAnchor 按缩放换算被提起尖尖锚点", () => {
+  assert.deepEqual(scaledDragAnchor(naiwa, 1.5), {
+    x: 141,
+    y: 33,
+  });
+});
+
+test("scaledDragAnchor 会随角色朝向镜像横坐标", () => {
+  assert.deepEqual(scaledDragAnchor(lulu, 1, "left"), {
+    x: 131,
+    y: 62,
   });
 });
 

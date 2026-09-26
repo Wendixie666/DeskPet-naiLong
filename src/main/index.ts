@@ -202,6 +202,7 @@ function registerIpc(): void {
     endPat: () => handle?.runtime.endPat(),
     getSettings: settingsSnapshot,
     snapshot: currentSnapshot,
+    startDrag: (pointer) => handle?.runtime.startDrag(pointer),
     startPat: () => handle?.runtime.startPat(),
     updateSettings: (value) => {
       settingsManager.update(value);

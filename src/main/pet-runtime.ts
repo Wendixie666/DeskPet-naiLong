@@ -49,6 +49,7 @@ export interface PetRuntime {
   getSnapshot(): PetSnapshot;
   keyboardActivity(): void;
   summon(target: Point): void;
+  startDrag(pointer: Point): void;
   startPat(): void;
   dismissReminder(): void;
   triggerReminder(todo: TodoItem): boolean;
@@ -229,6 +230,13 @@ export function createPetRuntime(options: PetRuntimeOptions): PetRuntime {
       exitWindowPerch();
       interruptReminder();
       motion.dragBy(deltaX, deltaY);
+    },
+
+    startDrag(pointer) {
+      dragReleaseRequest += 1;
+      exitWindowPerch();
+      interruptReminder();
+      motion.startDrag(pointer);
     },
 
     endDrag() {
